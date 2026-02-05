@@ -29,6 +29,7 @@ body {
 .container {
   width: 420px;
   padding: 16px;
+  padding-bottom: 24px;
   background: #fff;
 }
 
@@ -243,6 +244,8 @@ h2 {
 .actions {
   display: flex;
   gap: 8px;
+  margin-top: 12px;
+  padding-bottom: 8px;
 }
 
 .btn {

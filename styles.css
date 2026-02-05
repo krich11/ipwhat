@@ -28,8 +28,7 @@ body {
 
 .container {
   width: 420px;
-  padding: 16px;
-  padding-bottom: 24px;
+  padding: 12px;
   background: #fff;
 }
 
@@ -42,10 +41,10 @@ body {
 }
 
 h1 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #1a73e8;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 h2 {
@@ -58,21 +57,21 @@ h2 {
 }
 
 .subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 /* Status Cards */
 .status-cards {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .status-card {
   flex: 1;
-  padding: 12px;
+  padding: 8px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
@@ -173,15 +172,15 @@ h2 {
 .ip-section {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
 }
 
 .ip-section h2 {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #666;
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   padding: 0;
   border: none;
   text-transform: uppercase;
@@ -190,29 +189,34 @@ h2 {
 
 .ip-row {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 6px 0;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  gap: 8px;
 }
 
 .ip-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .ip-value {
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 10px;
   color: #333;
   background: #fff;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid #e0e0e0;
-  width: 100%;
+  flex: 1;
+  text-align: right;
   word-break: break-all;
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ip-value.copyable {
@@ -232,18 +236,7 @@ h2 {
   color: #2e7d32;
 }
 
-/* Last Check */
-.last-check {
-  font-size: 11px;
-  color: #999;
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-/* Buttons */
-.actions {
-  display: flex;
-  gap: 8px;
+/* Last Check */\n.last-check {\n  font-size: 10px;\n  color: #999;\n  text-align: center;\n  margin-bottom: 8px;\n}\n\n/* Buttons */\n.actions {\n  display: flex;\n  gap: 8px;
   margin-top: 12px;
   padding-bottom: 8px;
 }

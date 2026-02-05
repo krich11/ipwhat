@@ -190,52 +190,57 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
 
 // Get public IP address using external services
 async function getPublicIP(type, timeout) {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    // Use different services for IPv4 vs IPv6
-    let url;
-    if (type === 'ipv4') {
-      // api.ipify.org forces IPv4
-      url = 'https://api.ipify.org?format=text';
-    } else {
-      // api64.ipify.org returns IPv6 if available, IPv4 otherwise
-      // We'll check if the result is actually IPv6
-      url = 'https://api64.ipify.org?format=text';
-    }
-    
-    console.log(`[IP What] Getting public ${type} from: ${url}`);
-    
-    const response = await fetch(url, {
-      signal: controller.signal,
-      cache: 'no-store'
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      console.log(`[IP What] Public ${type} response not ok: ${response.status}`);
-      return null;
-    }
-    
-    const ip = (await response.text()).trim();
-    console.log(`[IP What] Public ${type} result: ${ip}`);
-    
-    // For IPv6 request, verify it's actually IPv6 (contains colons)
-    if (type === 'ipv6') {
-      if (!ip.includes(':')) {
-        // Got an IPv4 address, meaning no IPv6 connectivity
-        console.log(`[IP What] Public IPv6 returned IPv4, no IPv6 connectivity`);
-        return null;
+  // Try multiple services in case one fails
+  const ipv4Services = [
+    'https://checkip.amazonaws.com/',
+    'https://icanhazip.com/',
+    'https://ifconfig.me/ip'
+  ];
+  
+  const ipv6Services = [
+    'https://v6.ident.me/',
+    'https://ipv6.icanhazip.com/'
+  ];
+  
+  const services = type === 'ipv4' ? ipv4Services : ipv6Services;
+  
+  for (const url of services) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      console.log(`[IP What] Getting public ${type} from: ${url}`);
+      
+      const response = await fetch(url, {
+        signal: controller.signal,
+        cache: 'no-store'
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.log(`[IP What] Public ${type} response not ok: ${response.status}`);
+        continue;
       }
+      
+      const ip = (await response.text()).trim();
+      console.log(`[IP What] Public ${type} result: ${ip}`);
+      
+      // Validate the result looks like an IP
+      if (type === 'ipv4' && ip.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
+        return ip;
+      }
+      if (type === 'ipv6' && ip.includes(':')) {
+        return ip;
+      }
+      
+      console.log(`[IP What] Public ${type} result doesn't look valid`);
+    } catch (error) {
+      console.log(`[IP What] Failed to get public ${type} from ${url}:`, error.message);
     }
-    
-    return ip;
-  } catch (error) {
-    console.log(`[IP What] Failed to get public ${type}:`, error.message);
-    return null;
   }
+  
+  return null;
 }
 
 // Get local IP addresses - try multiple methods

@@ -194,12 +194,6 @@ async function getLocalIPs() {
         }
       }
     }
-        // Must contain at least 2 colons and not be link-local
-        if (ip.split(':').length >= 3 && !ip.toLowerCase().startsWith('fe80')) {
-          result.ipv6 = ip;
-        }
-      }
-    }
   } catch (error) {
     console.log('[IP What] Failed to get local IPs:', error.message);
   }

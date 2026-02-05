@@ -66,20 +66,25 @@ async function checkConnectivity(target, type, timeout) {
   const startTime = Date.now();
   
   try {
-    // Format IP for URL - IPv6 needs brackets
-    const formattedTarget = type === 'ipv6' ? `[${target}]` : target;
-    
-    // Use HTTPS - if TCP connects at all (even with cert error), IP is reachable
-    const url = `https://${formattedTarget}/`;
+    // Use reliable external services that force specific IP versions
+    let url;
+    if (type === 'ipv4') {
+      // ipify only has IPv4, guarantees IPv4 connectivity test
+      url = 'https://api.ipify.org?format=text';
+    } else {
+      // Test IPv6 with a direct IPv6 address
+      const formattedTarget = `[${target}]`;
+      url = `https://${formattedTarget}/`;
+    }
     
     console.log(`[IP What] Checking ${type}: ${url}`);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    await fetch(url, {
+    const response = await fetch(url, {
       signal: controller.signal,
-      mode: 'no-cors',
+      mode: type === 'ipv4' ? 'cors' : 'no-cors',
       cache: 'no-store'
     });
     
@@ -187,12 +192,15 @@ async function getPublicIP(type, timeout) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    // Use Cloudflare's trace endpoint - forces specific IP version
+    // Use different services for IPv4 vs IPv6
     let url;
     if (type === 'ipv4') {
-      url = 'https://1.1.1.1/cdn-cgi/trace';
+      // api.ipify.org forces IPv4
+      url = 'https://api.ipify.org?format=text';
     } else {
-      url = 'https://[2606:4700:4700::1111]/cdn-cgi/trace';
+      // api64.ipify.org returns IPv6 if available, IPv4 otherwise
+      // We'll check if the result is actually IPv6
+      url = 'https://api64.ipify.org?format=text';
     }
     
     const response = await fetch(url, {
@@ -204,82 +212,29 @@ async function getPublicIP(type, timeout) {
     
     if (!response.ok) return null;
     
-    const text = await response.text();
-    // Parse "ip=x.x.x.x" from response
-    const match = text.match(/ip=([^\n]+)/);
-    return match ? match[1] : null;
+    const ip = (await response.text()).trim();
+    
+    // For IPv6 request, verify it's actually IPv6 (contains colons)
+    if (type === 'ipv6') {
+      if (!ip.includes(':')) {
+        // Got an IPv4 address, meaning no IPv6 connectivity
+        return null;
+      }
+    }
+    
+    return ip;
   } catch (error) {
     console.log(`[IP What] Failed to get public ${type}:`, error.message);
     return null;
   }
 }
 
-// Get local IP addresses using WebRTC
+// Get local IP addresses - try multiple methods
 async function getLocalIPs() {
   const result = { ipv4: null, ipv6: null };
   
-  try {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    
-    pc.createDataChannel('');
-    
-    const candidates = [];
-    
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        candidates.push(event.candidate.candidate);
-      }
-    };
-    
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    
-    // Wait for ICE gathering
-    await new Promise((resolve) => {
-      if (pc.iceGatheringState === 'complete') {
-        resolve();
-      } else {
-        const checkState = () => {
-          if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            resolve();
-          }
-        };
-        pc.addEventListener('icegatheringstatechange', checkState);
-        // Timeout after 3 seconds
-        setTimeout(resolve, 3000);
-      }
-    });
-    
-    pc.close();
-    
-    // Parse local IPs from candidates
-    for (const candidate of candidates) {
-      // Match IP addresses in candidate string
-      const ipv4Match = candidate.match(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/);
-      const ipv6Match = candidate.match(/([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7})/);
-      
-      if (ipv4Match && !result.ipv4) {
-        const ip = ipv4Match[1];
-        // Skip link-local and loopback
-        if (!ip.startsWith('127.') && !ip.startsWith('169.254.')) {
-          result.ipv4 = ip;
-        }
-      }
-      
-      if (ipv6Match && !result.ipv6) {
-        const ip = ipv6Match[1];
-        // Skip link-local (fe80::)
-        if (!ip.toLowerCase().startsWith('fe80')) {
-          result.ipv6 = ip;
-        }
-      }
-    }
-  } catch (error) {
-    console.log('[IP What] Failed to get local IPs:', error.message);
-  }
+  // Method 1: Try to get from network interfaces via fetch to local services
+  // This won't work in service worker, so we return null and let popup handle it
   
   return result;
 }

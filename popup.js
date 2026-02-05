@@ -51,11 +51,14 @@ async function loadStatus() {
   updateStatusCard('ipv4', status.ipv4Status);
   updateStatusCard('ipv6', status.ipv6Status);
   
-  // Update IP addresses
-  document.getElementById('local-ipv4').textContent = status.localIPv4 || 'Not detected';
-  document.getElementById('local-ipv6').textContent = status.localIPv6 || 'Not detected';
+  // Update public IP addresses from storage
   document.getElementById('public-ipv4').textContent = status.publicIPv4 || 'Not detected';
   document.getElementById('public-ipv6').textContent = status.publicIPv6 || 'Not detected';
+  
+  // Get local IPs using WebRTC (works in popup context)
+  const localIPs = await getLocalIPs();
+  document.getElementById('local-ipv4').textContent = localIPs.ipv4 || 'Not detected';
+  document.getElementById('local-ipv6').textContent = localIPs.ipv6 || 'Not detected';
   
   if (status.lastCheck) {
     const lastCheck = new Date(status.lastCheck);
@@ -118,21 +121,72 @@ function formatTime(date) {
   });
 }
 
-// TODO: Fetch and display public IP addresses
-// async function fetchPublicIPs() {
-//   try {
-//     const ipv4Response = await fetch('https://api.ipify.org?format=json');
-//     const ipv4Data = await ipv4Response.json();
-//     document.getElementById('public-ipv4').textContent = ipv4Data.ip;
-//   } catch (e) {
-//     document.getElementById('public-ipv4').textContent = 'Not available';
-//   }
-//   
-//   try {
-//     const ipv6Response = await fetch('https://api64.ipify.org?format=json');
-//     const ipv6Data = await ipv6Response.json();
-//     document.getElementById('public-ipv6').textContent = ipv6Data.ip;
-//   } catch (e) {
-//     document.getElementById('public-ipv6').textContent = 'Not available';
-//   }
-// }
+// Get local IP addresses using WebRTC
+async function getLocalIPs() {
+  const result = { ipv4: null, ipv6: null };
+  
+  try {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    
+    pc.createDataChannel('');
+    
+    const candidates = [];
+    
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        candidates.push(event.candidate.candidate);
+      }
+    };
+    
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    
+    // Wait for ICE gathering with timeout
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 2000);
+      
+      if (pc.iceGatheringState === 'complete') {
+        clearTimeout(timeout);
+        resolve();
+      } else {
+        pc.addEventListener('icegatheringstatechange', () => {
+          if (pc.iceGatheringState === 'complete') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      }
+    });
+    
+    pc.close();
+    
+    // Parse local IPs from candidates
+    for (const candidate of candidates) {
+      // Match IPv4 addresses
+      const ipv4Match = candidate.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/);
+      if (ipv4Match && !result.ipv4) {
+        const ip = ipv4Match[1];
+        // Skip loopback and link-local
+        if (!ip.startsWith('127.') && !ip.startsWith('0.') && !ip.startsWith('169.254.')) {
+          result.ipv4 = ip;
+        }
+      }
+      
+      // Match IPv6 addresses (simplified pattern for common formats)
+      const ipv6Match = candidate.match(/\b([0-9a-fA-F:]{7,})\b/);
+      if (ipv6Match && !result.ipv6) {
+        const ip = ipv6Match[1];
+        // Must contain at least 2 colons and not be link-local
+        if (ip.split(':').length >= 3 && !ip.toLowerCase().startsWith('fe80')) {
+          result.ipv6 = ip;
+        }
+      }
+    }
+  } catch (error) {
+    console.log('[IP What] Failed to get local IPs:', error.message);
+  }
+  
+  return result;
+}

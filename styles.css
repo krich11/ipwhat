@@ -12,11 +12,16 @@ body {
   line-height: 1.5;
   color: #333;
   background: #f5f5f5;
+  overflow: hidden;
+}
+
+html, body {
+  height: auto;
+  min-height: 100%;
 }
 
 .container {
   width: 420px;
-  min-height: 720px;
   padding: 16px;
   background: #fff;
 }

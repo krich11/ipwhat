@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "IP What - IPv4/IPv6 Connectivity Checker",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Check IPv4 and IPv6 connectivity with local and public IP detection",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "http://*/*",

@@ -16,68 +16,122 @@
       <button id="open-settings" class="btn-icon" title="Settings">⚙️</button>
     </div>
     
-    <div class="status-cards">
-      <div class="status-card" id="ipv4-card">
-        <div class="status-header">
-          <span class="protocol">IPv4</span>
-          <span class="status-indicator" id="ipv4-indicator"></span>
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button class="tab active" data-tab="status">Status</button>
+      <button class="tab" data-tab="history">History</button>
+    </div>
+    
+    <!-- Status Tab Content -->
+    <div class="tab-content active" id="tab-status">
+      <div class="status-cards">
+        <div class="status-card" id="ipv4-card">
+          <div class="status-header">
+            <span class="protocol">IPv4</span>
+            <span class="status-indicator" id="ipv4-indicator"></span>
+          </div>
+          <div class="status-details">
+            <div class="target" id="ipv4-target">-</div>
+            <div class="latency" id="ipv4-latency">-</div>
+          </div>
         </div>
-        <div class="status-details">
-          <div class="target" id="ipv4-target">-</div>
-          <div class="latency" id="ipv4-latency">-</div>
+        
+        <div class="status-card" id="ipv6-card">
+          <div class="status-header">
+            <span class="protocol">IPv6</span>
+            <span class="status-indicator" id="ipv6-indicator"></span>
+          </div>
+          <div class="status-details">
+            <div class="target" id="ipv6-target">-</div>
+            <div class="latency" id="ipv6-latency">-</div>
+          </div>
         </div>
       </div>
       
-      <div class="status-card" id="ipv6-card">
-        <div class="status-header">
-          <span class="protocol">IPv6</span>
-          <span class="status-indicator" id="ipv6-indicator"></span>
+      <div class="ip-section">
+        <h2>Local IP</h2>
+        <div class="ip-row">
+          <span class="ip-label">IPv4:</span>
+          <span class="ip-value copyable" id="local-ipv4" title="Click to copy">-</span>
         </div>
-        <div class="status-details">
-          <div class="target" id="ipv6-target">-</div>
-          <div class="latency" id="ipv6-latency">-</div>
+        <div class="ip-row">
+          <span class="ip-label">IPv6:</span>
+          <span class="ip-value copyable" id="local-ipv6" title="Click to copy">-</span>
         </div>
       </div>
+      
+      <div class="ip-section">
+        <h2>Public IP</h2>
+        <div class="ip-row">
+          <span class="ip-label">IPv4:</span>
+          <span class="ip-value copyable" id="public-ipv4" title="Click to copy">-</span>
+        </div>
+        <div class="ip-row">
+          <span class="ip-label">IPv6:</span>
+          <span class="ip-value copyable" id="public-ipv6" title="Click to copy">-</span>
+        </div>
+      </div>
+      
+      <div class="ip-section dns-section">
+        <h2>DNS Resolution</h2>
+        <div class="dns-status-row">
+          <span class="dns-test-label">System DNS:</span>
+          <span class="dns-test-fqdn" id="dns-fqdn-display">-</span>
+          <span class="dns-test-result" id="dns-result">-</span>
+          <span class="dns-test-latency" id="dns-latency"></span>
+        </div>
+        <p class="dns-help">If IPv4/IPv6 work but DNS fails → local DNS is broken</p>
+      </div>
+      
+      <div class="footer">
+        <div class="last-check" id="last-check">Last check: -</div>
+        <button id="check-now" class="btn btn-primary">Check Now</button>
+      </div>
     </div>
     
-    <div class="ip-section">
-      <h2>Local IP</h2>
-      <div class="ip-row">
-        <span class="ip-label">IPv4:</span>
-        <span class="ip-value copyable" id="local-ipv4" title="Click to copy">-</span>
+    <!-- History Tab Content -->
+    <div class="tab-content" id="tab-history">
+      <div class="history-stats">
+        <div class="stat-card">
+          <div class="stat-label">IPv4 Uptime</div>
+          <div class="stat-value" id="ipv4-uptime">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">IPv6 Uptime</div>
+          <div class="stat-value" id="ipv6-uptime">-</div>
+        </div>
       </div>
-      <div class="ip-row">
-        <span class="ip-label">IPv6:</span>
-        <span class="ip-value copyable" id="local-ipv6" title="Click to copy">-</span>
+      
+      <div class="history-section">
+        <h2>Last 24 Hours</h2>
+        <div class="history-graph">
+          <div class="graph-row">
+            <span class="graph-label">IPv4</span>
+            <div class="graph-bar" id="ipv4-graph"></div>
+          </div>
+          <div class="graph-row">
+            <span class="graph-label">IPv6</span>
+            <div class="graph-bar" id="ipv6-graph"></div>
+          </div>
+        </div>
+        <div class="graph-legend">
+          <span class="legend-item"><span class="legend-dot connected"></span>Connected</span>
+          <span class="legend-item"><span class="legend-dot disconnected"></span>Disconnected</span>
+          <span class="legend-item"><span class="legend-dot unknown"></span>No data</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="ip-section">
-      <h2>Public IP</h2>
-      <div class="ip-row">
-        <span class="ip-label">IPv4:</span>
-        <span class="ip-value copyable" id="public-ipv4" title="Click to copy">-</span>
+      
+      <div class="history-section">
+        <h2>Recent Events</h2>
+        <div class="event-list" id="event-list">
+          <div class="no-events">No events recorded yet</div>
+        </div>
       </div>
-      <div class="ip-row">
-        <span class="ip-label">IPv6:</span>
-        <span class="ip-value copyable" id="public-ipv6" title="Click to copy">-</span>
+      
+      <div class="history-actions">
+        <button id="export-csv" class="btn btn-secondary">Export CSV</button>
+        <button id="clear-history" class="btn-link">Clear History</button>
       </div>
-    </div>
-    
-    <div class="ip-section dns-section">
-      <h2>DNS Resolution</h2>
-      <div class="dns-status-row">
-        <span class="dns-test-label">System DNS:</span>
-        <span class="dns-test-fqdn" id="dns-fqdn-display">-</span>
-        <span class="dns-test-result" id="dns-result">-</span>
-        <span class="dns-test-latency" id="dns-latency"></span>
-      </div>
-      <p class="dns-help">If IPv4/IPv6 work but DNS fails → local DNS is broken</p>
-    </div>
-    
-    <div class="footer">
-      <div class="last-check" id="last-check">Last check: -</div>
-      <button id="check-now" class="btn btn-primary">Check Now</button>
     </div>
   </div>
   

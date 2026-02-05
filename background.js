@@ -36,6 +36,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function performConnectivityCheck() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   
+  // Get previous status for change detection
+  const prevStatus = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
+  
   // Check connectivity, get public IPs, and perform DNS checks in parallel
   const [ipv4Status, ipv6Status, publicIPv4, publicIPv6, dnsResults] = await Promise.all([
     checkConnectivity(settings.ipv4Target, 'ipv4', settings.timeout),
@@ -51,8 +54,10 @@ async function performConnectivityCheck() {
   console.log('[IP What] Storing results - publicIPv4:', publicIPv4, 'publicIPv6:', publicIPv6);
   console.log('[IP What] DNS results:', dnsResults);
   
+  const now = Date.now();
+  
   await chrome.storage.local.set({
-    lastCheck: Date.now(),
+    lastCheck: now,
     ipv4Status,
     ipv6Status,
     publicIPv4,
@@ -61,6 +66,12 @@ async function performConnectivityCheck() {
     localIPv6: localIPs.ipv6,
     dnsResults
   });
+  
+  // Store history entry
+  await storeHistoryEntry(now, ipv4Status, ipv6Status);
+  
+  // Check for connectivity changes and notify
+  await checkAndNotify(prevStatus, ipv4Status, ipv6Status);
   
   updateBadge(ipv4Status, ipv6Status);
 }
@@ -334,6 +345,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   
+  if (message.action === 'getHistory') {
+    chrome.storage.local.get(['connectivityHistory', 'connectivityEvents']).then(sendResponse);
+    return true;
+  }
+  
+  if (message.action === 'clearHistory') {
+    chrome.storage.local.set({ connectivityHistory: [], connectivityEvents: [] }).then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+  
   if (message.action === 'copyToClipboard') {
     // Copy text to clipboard (requires offscreen document in MV3)
     navigator.clipboard.writeText(message.text).then(() => {
@@ -344,3 +367,85 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+// Store history entry
+async function storeHistoryEntry(timestamp, ipv4Status, ipv6Status) {
+  const { connectivityHistory = [] } = await chrome.storage.local.get('connectivityHistory');
+  
+  // Add new entry
+  connectivityHistory.push({
+    timestamp,
+    ipv4: ipv4Status?.connected ?? null,
+    ipv6: ipv6Status?.connected ?? null,
+    ipv4Latency: ipv4Status?.latency ?? null,
+    ipv6Latency: ipv6Status?.latency ?? null
+  });
+  
+  // Keep only last 24 hours (assuming 30 second intervals = 2880 entries max)
+  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  const filteredHistory = connectivityHistory.filter(entry => entry.timestamp > oneDayAgo);
+  
+  await chrome.storage.local.set({ connectivityHistory: filteredHistory });
+}
+
+// Check for connectivity changes and send notifications
+async function checkAndNotify(prevStatus, ipv4Status, ipv6Status) {
+  const prevIpv4 = prevStatus?.ipv4Status?.connected;
+  const prevIpv6 = prevStatus?.ipv6Status?.connected;
+  const currIpv4 = ipv4Status?.connected;
+  const currIpv6 = ipv6Status?.connected;
+  
+  const changes = [];
+  const now = Date.now();
+  
+  // Detect IPv4 changes
+  if (prevIpv4 !== undefined && prevIpv4 !== currIpv4) {
+    if (currIpv4) {
+      changes.push('IPv4 connected');
+    } else {
+      changes.push('IPv4 disconnected');
+    }
+  }
+  
+  // Detect IPv6 changes
+  if (prevIpv6 !== undefined && prevIpv6 !== currIpv6) {
+    if (currIpv6) {
+      changes.push('IPv6 connected');
+    } else {
+      changes.push('IPv6 disconnected');
+    }
+  }
+  
+  // Store event if there were changes
+  if (changes.length > 0) {
+    const { connectivityEvents = [] } = await chrome.storage.local.get('connectivityEvents');
+    
+    for (const change of changes) {
+      connectivityEvents.push({
+        timestamp: now,
+        event: change,
+        type: change.includes('connected') && !change.includes('disconnected') ? 'up' : 'down'
+      });
+    }
+    
+    // Keep only last 100 events
+    const trimmedEvents = connectivityEvents.slice(-100);
+    await chrome.storage.local.set({ connectivityEvents: trimmedEvents });
+    
+    // Send notification
+    const message = changes.join(', ');
+    const isDown = changes.some(c => c.includes('disconnected'));
+    
+    try {
+      await chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon128.svg',
+        title: isDown ? '⚠️ Connectivity Change' : '✓ Connectivity Restored',
+        message: message,
+        priority: isDown ? 2 : 1
+      });
+    } catch (error) {
+      console.log('[IP What] Notification error:', error.message);
+    }
+  }
+}

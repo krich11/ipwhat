@@ -15,6 +15,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('check-now').addEventListener('click', checkNow);
   document.getElementById('open-settings').addEventListener('click', openSettings);
   
+  // Tab navigation
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabId = tab.dataset.tab;
+      
+      // Update active tab button
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Update active tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      
+      // Load history when switching to history tab
+      if (tabId === 'history') {
+        loadHistory();
+      }
+    });
+  });
+  
+  // History tab buttons
+  document.getElementById('export-csv').addEventListener('click', exportCSV);
+  document.getElementById('clear-history').addEventListener('click', clearHistory);
+  
   // Add click-to-copy for IP addresses
   document.querySelectorAll('.copyable').forEach(el => {
     el.addEventListener('click', async () => {
@@ -227,4 +253,155 @@ async function getLocalIPs() {
   }
   
   return result;
+}
+
+// History functions
+async function loadHistory() {
+  const { connectivityHistory = [], connectivityEvents = [] } = 
+    await chrome.runtime.sendMessage({ action: 'getHistory' });
+  
+  // Calculate uptime percentages
+  const ipv4Uptime = calculateUptime(connectivityHistory, 'ipv4');
+  const ipv6Uptime = calculateUptime(connectivityHistory, 'ipv6');
+  
+  document.getElementById('ipv4-uptime').textContent = ipv4Uptime;
+  document.getElementById('ipv6-uptime').textContent = ipv6Uptime;
+  
+  // Render timeline graph
+  renderGraph('ipv4-graph', connectivityHistory, 'ipv4');
+  renderGraph('ipv6-graph', connectivityHistory, 'ipv6');
+  
+  // Render recent events
+  renderEvents(connectivityEvents);
+}
+
+function calculateUptime(history, type) {
+  if (history.length === 0) return '-';
+  
+  const connectedCount = history.filter(h => h[type] === true).length;
+  const totalCount = history.filter(h => h[type] !== null).length;
+  
+  if (totalCount === 0) return '-';
+  
+  const percentage = (connectedCount / totalCount * 100).toFixed(1);
+  return `${percentage}%`;
+}
+
+function renderGraph(elementId, history, type) {
+  const container = document.getElementById(elementId);
+  container.innerHTML = '';
+  
+  if (history.length === 0) {
+    container.innerHTML = '<span class="no-data">No data yet</span>';
+    return;
+  }
+  
+  // Create 48 buckets (30 min each for 24 hours)
+  const buckets = [];
+  const now = Date.now();
+  const bucketDuration = 30 * 60 * 1000; // 30 minutes
+  
+  for (let i = 47; i >= 0; i--) {
+    const bucketStart = now - (i + 1) * bucketDuration;
+    const bucketEnd = now - i * bucketDuration;
+    
+    const entriesInBucket = history.filter(h => 
+      h.timestamp >= bucketStart && h.timestamp < bucketEnd
+    );
+    
+    let status = 'unknown';
+    if (entriesInBucket.length > 0) {
+      const connected = entriesInBucket.filter(h => h[type] === true).length;
+      const disconnected = entriesInBucket.filter(h => h[type] === false).length;
+      
+      if (connected > disconnected) {
+        status = 'connected';
+      } else if (disconnected > 0) {
+        status = 'disconnected';
+      }
+    }
+    
+    buckets.push(status);
+  }
+  
+  // Render buckets
+  buckets.forEach((status, i) => {
+    const bar = document.createElement('div');
+    bar.className = `graph-segment ${status}`;
+    bar.title = getTimeLabel(47 - i);
+    container.appendChild(bar);
+  });
+}
+
+function getTimeLabel(bucketsAgo) {
+  const hours = (bucketsAgo * 0.5).toFixed(1);
+  return `${hours}h ago`;
+}
+
+function renderEvents(events) {
+  const container = document.getElementById('event-list');
+  
+  if (events.length === 0) {
+    container.innerHTML = '<div class="no-events">No events recorded yet</div>';
+    return;
+  }
+  
+  // Show most recent 10 events
+  const recentEvents = events.slice(-10).reverse();
+  
+  container.innerHTML = recentEvents.map(event => {
+    const time = new Date(event.timestamp);
+    const timeStr = time.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const icon = event.type === 'up' ? '🟢' : '🔴';
+    
+    return `<div class="event-item ${event.type}">
+      <span class="event-icon">${icon}</span>
+      <span class="event-text">${event.event}</span>
+      <span class="event-time">${timeStr}</span>
+    </div>`;
+  }).join('');
+}
+
+async function exportCSV() {
+  const { connectivityHistory = [] } = 
+    await chrome.runtime.sendMessage({ action: 'getHistory' });
+  
+  if (connectivityHistory.length === 0) {
+    alert('No history to export');
+    return;
+  }
+  
+  // Build CSV
+  const headers = ['Timestamp', 'DateTime', 'IPv4', 'IPv4 Latency', 'IPv6', 'IPv6 Latency'];
+  const rows = connectivityHistory.map(h => [
+    h.timestamp,
+    new Date(h.timestamp).toISOString(),
+    h.ipv4 === true ? 'connected' : (h.ipv4 === false ? 'disconnected' : 'unknown'),
+    h.ipv4Latency ?? '',
+    h.ipv6 === true ? 'connected' : (h.ipv6 === false ? 'disconnected' : 'unknown'),
+    h.ipv6Latency ?? ''
+  ]);
+  
+  const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+  
+  // Download
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ipwhat-history-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function clearHistory() {
+  if (confirm('Clear all connectivity history?')) {
+    await chrome.runtime.sendMessage({ action: 'clearHistory' });
+    loadHistory();
+  }
 }

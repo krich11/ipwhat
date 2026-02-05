@@ -139,63 +139,49 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
   const sizes = [16, 32, 48, 128];
   const imageData = {};
   
-  // Detect dark mode
-  const isDarkMode = self.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
-  
   for (const size of sizes) {
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
     
-    // Background adapts to system theme
-    ctx.fillStyle = isDarkMode ? '#2d2d2d' : '#f0f0f0';
-    ctx.beginPath();
-    ctx.roundRect(0, 0, size, size, size * 0.15);
-    ctx.fill();
+    // Clear canvas (transparent background works on both dark/light toolbars)
+    ctx.clearRect(0, 0, size, size);
     
-    // Calculate font size - maximize to fill the icon
-    const fontSize = size * 0.9;
+    // Maximize font size - fill the entire icon height
+    const fontSize = size * 1.1;
     ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Colors optimized for contrast on dark vs light backgrounds
-    let greenColor, redColor, grayColor;
-    if (isDarkMode) {
-      greenColor = '#4ADE80';  // Bright green for dark bg
-      redColor = '#F87171';     // Bright red for dark bg
-      grayColor = '#9CA3AF';    // Light gray for dark bg
-    } else {
-      greenColor = '#16A34A';  // Dark green for light bg
-      redColor = '#DC2626';     // Dark red for light bg
-      grayColor = '#6B7280';    // Dark gray for light bg
-    }
+    // Use saturated colors with dark outline for visibility on any background
+    const greenColor = '#22C55E';  // Bright green
+    const redColor = '#EF4444';     // Bright red
+    const grayColor = '#9CA3AF';    // Neutral gray
     
     // Get color based on status (undefined = gray, true = green, false = red)
     const color4 = ipv4Connected === undefined ? grayColor : (ipv4Connected ? greenColor : redColor);
     const color6 = ipv6Connected === undefined ? grayColor : (ipv6Connected ? greenColor : redColor);
     
-    // Draw "4" on the left - positioned tight
-    ctx.fillStyle = color4;
-    ctx.fillText('4', size * 0.27, size * 0.55);
+    // Draw text with dark outline for contrast on any background
+    const outlineWidth = Math.max(1, size * 0.06);
+    ctx.lineWidth = outlineWidth;
+    ctx.strokeStyle = '#000000';
+    ctx.lineJoin = 'round';
     
-    // Draw "6" on the right  
+    // Draw "4" on the left - tight to edge
+    ctx.fillStyle = color4;
+    ctx.strokeText('4', size * 0.25, size * 0.52);
+    ctx.fillText('4', size * 0.25, size * 0.52);
+    
+    // Draw "6" on the right - tight to edge
     ctx.fillStyle = color6;
-    ctx.fillText('6', size * 0.73, size * 0.55);
+    ctx.strokeText('6', size * 0.75, size * 0.52);
+    ctx.fillText('6', size * 0.75, size * 0.52);
     
     // Get image data
     imageData[size] = ctx.getImageData(0, 0, size, size);
   }
   
   chrome.action.setIcon({ imageData });
-}
-
-// Listen for system theme changes
-if (self.matchMedia) {
-  self.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async () => {
-    // Re-render icon with new theme colors
-    const status = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
-    updateIcon(status.ipv4Status?.connected, status.ipv6Status?.connected);
-  });
 }
 
 // Listen for messages from popup

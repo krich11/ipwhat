@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP What</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>IP What</h1>
+    <p class="subtitle">IPv4/IPv6 Connectivity Status</p>
+    
+    <div class="status-cards">
+      <div class="status-card" id="ipv4-card">
+        <div class="status-header">
+          <span class="protocol">IPv4</span>
+          <span class="status-indicator" id="ipv4-indicator"></span>
+        </div>
+        <div class="status-details">
+          <div class="target" id="ipv4-target">-</div>
+          <div class="latency" id="ipv4-latency">-</div>
+        </div>
+      </div>
+      
+      <div class="status-card" id="ipv6-card">
+        <div class="status-header">
+          <span class="protocol">IPv6</span>
+          <span class="status-indicator" id="ipv6-indicator"></span>
+        </div>
+        <div class="status-details">
+          <div class="target" id="ipv6-target">-</div>
+          <div class="latency" id="ipv6-latency">-</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- TODO: Add public IP display section -->
+    <!-- <div class="public-ip-section">
+      <div class="public-ip">
+        <span class="label">Public IPv4:</span>
+        <span class="value" id="public-ipv4">Detecting...</span>
+      </div>
+      <div class="public-ip">
+        <span class="label">Public IPv6:</span>
+        <span class="value" id="public-ipv6">Detecting...</span>
+      </div>
+    </div> -->
+    
+    <div class="last-check" id="last-check">Last check: -</div>
+    
+    <div class="actions">
+      <button id="check-now" class="btn btn-primary">Check Now</button>
+      <button id="open-settings" class="btn btn-secondary">Settings</button>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

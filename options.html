@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP What - Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container options-container">
+    <h1>IP What Settings</h1>
+    <p class="subtitle">Configure connectivity check targets</p>
+    
+    <form id="settings-form">
+      <div class="form-group">
+        <label for="ipv4-target">IPv4 Target</label>
+        <input type="text" id="ipv4-target" placeholder="8.8.8.8">
+        <p class="help-text">Default: Google DNS (8.8.8.8). Other options: Cloudflare (1.1.1.1), Quad9 (9.9.9.9)</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="ipv6-target">IPv6 Target</label>
+        <input type="text" id="ipv6-target" placeholder="2001:4860:4860::8888">
+        <p class="help-text">Default: Google DNS (2001:4860:4860::8888). Other options: Cloudflare (2606:4700:4700::1111)</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="timeout">Timeout (ms)</label>
+        <input type="number" id="timeout" min="1000" max="30000" step="500" placeholder="5000">
+        <p class="help-text">How long to wait for a response before considering the connection failed</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="check-interval">Check Interval (seconds)</label>
+        <input type="number" id="check-interval" min="10" max="300" step="10" placeholder="30">
+        <p class="help-text">How often to automatically check connectivity</p>
+      </div>
+      
+      <h2>Preset Targets</h2>
+      <div class="presets">
+        <button type="button" class="btn btn-preset" data-ipv4="8.8.8.8" data-ipv6="2001:4860:4860::8888">Google DNS</button>
+        <button type="button" class="btn btn-preset" data-ipv4="1.1.1.1" data-ipv6="2606:4700:4700::1111">Cloudflare</button>
+        <button type="button" class="btn btn-preset" data-ipv4="9.9.9.9" data-ipv6="2620:fe::fe">Quad9</button>
+        <button type="button" class="btn btn-preset" data-ipv4="208.67.222.222" data-ipv6="2620:119:35::35">OpenDNS</button>
+      </div>
+      
+      <!-- TODO: Add section for public IP display configuration -->
+      <!-- <h2>Public IP Display</h2>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="show-public-ip">
+          Show public IP in popup
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="context-menu-ip">
+          Add public IP to context menu
+        </label>
+      </div> -->
+      
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <button type="button" id="reset-defaults" class="btn btn-secondary">Reset to Defaults</button>
+      </div>
+    </form>
+    
+    <div id="save-status" class="save-status"></div>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>

@@ -143,34 +143,34 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
     
-    // Background
-    ctx.fillStyle = '#1a1a2e';
+    // Light background for better contrast
+    ctx.fillStyle = '#f0f0f0';
     ctx.beginPath();
     ctx.roundRect(0, 0, size, size, size * 0.15);
     ctx.fill();
     
-    // Calculate font size based on icon size
-    const fontSize = size * 0.55;
-    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    // Calculate font size - make it larger to fill the icon
+    const fontSize = size * 0.75;
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Colors
-    const greenColor = '#4CAF50';
-    const redColor = '#F44336';
-    const grayColor = '#666666';
+    // Colors - more saturated for visibility
+    const greenColor = '#2E7D32';  // Darker green for contrast on light bg
+    const redColor = '#C62828';     // Darker red for contrast on light bg
+    const grayColor = '#757575';
     
     // Get color based on status (undefined = gray, true = green, false = red)
     const color4 = ipv4Connected === undefined ? grayColor : (ipv4Connected ? greenColor : redColor);
     const color6 = ipv6Connected === undefined ? grayColor : (ipv6Connected ? greenColor : redColor);
     
-    // Draw "4" on the left
+    // Draw "4" on the left - positioned to fill space
     ctx.fillStyle = color4;
-    ctx.fillText('4', size * 0.3, size * 0.55);
+    ctx.fillText('4', size * 0.28, size * 0.55);
     
     // Draw "6" on the right  
     ctx.fillStyle = color6;
-    ctx.fillText('6', size * 0.7, size * 0.55);
+    ctx.fillText('6', size * 0.72, size * 0.55);
     
     // Get image data
     imageData[size] = ctx.getImageData(0, 0, size, size);

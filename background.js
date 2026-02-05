@@ -290,19 +290,20 @@ async function resolveWithSystem(fqdn, recordType, timeout) {
   const startTime = Date.now();
   
   try {
-    // Use Google's DoH with system-like behavior
-    // We simulate "system" by using a simple fetch which uses the browser's resolver
-    // However, fetch doesn't give us the resolved IP, so we use DoH with Google as "system"
-    const type = recordType === 'A' ? 1 : 28;
-    const url = `https://dns.google/resolve?name=${encodeURIComponent(fqdn)}&type=${type}`;
+    // Use Google's DoH JSON API
+    // Google uses /resolve endpoint with type as string (A, AAAA)
+    const url = `https://dns.google/resolve?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
     
-    console.log(`[IP What] System DNS ${recordType} for ${fqdn}`);
+    console.log(`[IP What] System DNS ${recordType} for ${fqdn}: ${url}`);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
     const response = await fetch(url, {
       signal: controller.signal,
+      headers: {
+        'Accept': 'application/dns-json'
+      },
       cache: 'no-store'
     });
     
@@ -315,9 +316,12 @@ async function resolveWithSystem(fqdn, recordType, timeout) {
     
     const data = await response.json();
     
+    // Type 1 = A (IPv4), Type 28 = AAAA (IPv6)
+    const expectedType = recordType === 'A' ? 1 : 28;
+    
     if (data.Answer && data.Answer.length > 0) {
       const ips = data.Answer
-        .filter(a => a.type === type)
+        .filter(a => a.type === expectedType)
         .map(a => a.data);
       
       return {
@@ -344,12 +348,19 @@ async function resolveWithDoH(fqdn, recordType, dohServer, timeout) {
   const startTime = Date.now();
   
   try {
-    const type = recordType === 'A' ? 1 : 28;
+    // Type 1 = A (IPv4), Type 28 = AAAA (IPv6)
+    const expectedType = recordType === 'A' ? 1 : 28;
     
-    // Use JSON API format (supported by Cloudflare, Google, Quad9, etc.)
-    const url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
+    // Build URL based on provider - Cloudflare needs ct parameter
+    let url;
+    if (dohServer.includes('cloudflare')) {
+      url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}&ct=application/dns-json`;
+    } else {
+      // Google, Quad9, OpenDNS use similar format
+      url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
+    }
     
-    console.log(`[IP What] DoH ${recordType} for ${fqdn} via ${dohServer}`);
+    console.log(`[IP What] DoH ${recordType} for ${fqdn} via ${url}`);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -373,7 +384,7 @@ async function resolveWithDoH(fqdn, recordType, dohServer, timeout) {
     
     if (data.Answer && data.Answer.length > 0) {
       const ips = data.Answer
-        .filter(a => a.type === type)
+        .filter(a => a.type === expectedType)
         .map(a => a.data);
       
       return {

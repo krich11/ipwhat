@@ -8,8 +8,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>IP What</h1>
-    <p class="subtitle">IPv4/IPv6 Connectivity Status</p>
+    <div class="header">
+      <div class="header-text">
+        <h1>IP What</h1>
+        <p class="subtitle">IPv4/IPv6 Connectivity Status</p>
+      </div>
+      <button id="open-settings" class="btn-icon" title="Settings">⚙️</button>
+    </div>
     
     <div class="status-cards">
       <div class="status-card" id="ipv4-card">
@@ -59,11 +64,9 @@
       </div>
     </div>
     
-    <div class="last-check" id="last-check">Last check: -</div>
-    
-    <div class="actions">
+    <div class="footer">
+      <div class="last-check" id="last-check">Last check: -</div>
       <button id="check-now" class="btn btn-primary">Check Now</button>
-      <button id="open-settings" class="btn btn-secondary">Settings</button>
     </div>
   </div>
   

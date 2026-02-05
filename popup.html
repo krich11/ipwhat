@@ -64,6 +64,38 @@
       </div>
     </div>
     
+    <div class="ip-section dns-section">
+      <h2>DNS Resolution <span class="dns-fqdn" id="dns-fqdn-display"></span></h2>
+      <div class="dns-comparison">
+        <div class="dns-column">
+          <div class="dns-header">System (Google)</div>
+          <div class="dns-row">
+            <span class="dns-label">A:</span>
+            <span class="dns-value" id="dns-system-a">-</span>
+            <span class="dns-latency" id="dns-system-a-latency"></span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-label">AAAA:</span>
+            <span class="dns-value" id="dns-system-aaaa">-</span>
+            <span class="dns-latency" id="dns-system-aaaa-latency"></span>
+          </div>
+        </div>
+        <div class="dns-column">
+          <div class="dns-header" id="dns-doh-header">Custom DoH</div>
+          <div class="dns-row">
+            <span class="dns-label">A:</span>
+            <span class="dns-value" id="dns-doh-a">-</span>
+            <span class="dns-latency" id="dns-doh-a-latency"></span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-label">AAAA:</span>
+            <span class="dns-value" id="dns-doh-aaaa">-</span>
+            <span class="dns-latency" id="dns-doh-aaaa-latency"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div class="footer">
       <div class="last-check" id="last-check">Last check: -</div>
       <button id="check-now" class="btn btn-primary">Check Now</button>

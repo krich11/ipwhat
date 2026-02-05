@@ -261,6 +261,80 @@ h2 {
   color: #2e7d32;
 }
 
+/* DNS Section */
+.dns-section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.dns-fqdn {
+  font-weight: 400;
+  font-size: 10px;
+  color: #999;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+.dns-comparison {
+  display: flex;
+  gap: 8px;
+}
+
+.dns-column {
+  flex: 1;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.dns-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dns-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.dns-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  min-width: 38px;
+}
+
+.dns-value {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 10px;
+  color: #333;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dns-value.success {
+  color: #2e7d32;
+}
+
+.dns-value.error {
+  color: #c62828;
+}
+
+.dns-latency {
+  font-size: 9px;
+  color: #1a73e8;
+  min-width: 35px;
+  text-align: right;
+}
+
 /* Footer */
 .footer {
   display: flex;

@@ -6,7 +6,9 @@ const DEFAULT_SETTINGS = {
   ipv4Target: '8.8.8.8',
   ipv6Target: '2001:4860:4860::8888',
   checkInterval: 30, // seconds
-  timeout: 5000 // milliseconds
+  timeout: 5000, // milliseconds
+  dnsFqdn: 'www.google.com',
+  dohServer: 'https://cloudflare-dns.com/dns-query'
 };
 
 // Initialize default settings on install
@@ -35,18 +37,20 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function performConnectivityCheck() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   
-  // Check connectivity and get public IPs in parallel
-  const [ipv4Status, ipv6Status, publicIPv4, publicIPv6] = await Promise.all([
+  // Check connectivity, get public IPs, and perform DNS checks in parallel
+  const [ipv4Status, ipv6Status, publicIPv4, publicIPv6, dnsResults] = await Promise.all([
     checkConnectivity(settings.ipv4Target, 'ipv4', settings.timeout),
     checkConnectivity(settings.ipv6Target, 'ipv6', settings.timeout),
     getPublicIP('ipv4', settings.timeout),
-    getPublicIP('ipv6', settings.timeout)
+    getPublicIP('ipv6', settings.timeout),
+    performDnsChecks(settings.dnsFqdn, settings.dohServer, settings.timeout)
   ]);
   
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();
   
   console.log('[IP What] Storing results - publicIPv4:', publicIPv4, 'publicIPv6:', publicIPv6);
+  console.log('[IP What] DNS results:', dnsResults);
   
   await chrome.storage.local.set({
     lastCheck: Date.now(),
@@ -55,7 +59,8 @@ async function performConnectivityCheck() {
     publicIPv4,
     publicIPv6,
     localIPv4: localIPs.ipv4,
-    localIPv6: localIPs.ipv6
+    localIPv6: localIPs.ipv6,
+    dnsResults
   });
   
   updateBadge(ipv4Status, ipv6Status);
@@ -251,6 +256,143 @@ async function getLocalIPs() {
   // This won't work in service worker, so we return null and let popup handle it
   
   return result;
+}
+
+// Perform DNS resolution checks
+async function performDnsChecks(fqdn, dohServer, timeout) {
+  const results = {
+    fqdn,
+    systemA: null,      // System DNS - A record (IPv4)
+    systemAAAA: null,   // System DNS - AAAA record (IPv6)
+    dohA: null,         // DoH server - A record (IPv4)
+    dohAAAA: null,      // DoH server - AAAA record (IPv6)
+    dohServer
+  };
+  
+  // Run all DNS checks in parallel
+  const [systemA, systemAAAA, dohA, dohAAAA] = await Promise.all([
+    resolveWithSystem(fqdn, 'A', timeout),
+    resolveWithSystem(fqdn, 'AAAA', timeout),
+    resolveWithDoH(fqdn, 'A', dohServer, timeout),
+    resolveWithDoH(fqdn, 'AAAA', dohServer, timeout)
+  ]);
+  
+  results.systemA = systemA;
+  results.systemAAAA = systemAAAA;
+  results.dohA = dohA;
+  results.dohAAAA = dohAAAA;
+  
+  return results;
+}
+
+// Resolve using system DNS (via fetch to a service that returns resolved IP)
+async function resolveWithSystem(fqdn, recordType, timeout) {
+  const startTime = Date.now();
+  
+  try {
+    // Use Google's DoH with system-like behavior
+    // We simulate "system" by using a simple fetch which uses the browser's resolver
+    // However, fetch doesn't give us the resolved IP, so we use DoH with Google as "system"
+    const type = recordType === 'A' ? 1 : 28;
+    const url = `https://dns.google/resolve?name=${encodeURIComponent(fqdn)}&type=${type}`;
+    
+    console.log(`[IP What] System DNS ${recordType} for ${fqdn}`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    
+    clearTimeout(timeoutId);
+    const latency = Date.now() - startTime;
+    
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}`, latency };
+    }
+    
+    const data = await response.json();
+    
+    if (data.Answer && data.Answer.length > 0) {
+      const ips = data.Answer
+        .filter(a => a.type === type)
+        .map(a => a.data);
+      
+      return {
+        success: true,
+        ips,
+        latency
+      };
+    }
+    
+    return { success: false, error: 'No records', latency };
+  } catch (error) {
+    const latency = Date.now() - startTime;
+    console.log(`[IP What] System DNS ${recordType} error:`, error.message);
+    
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Timeout', latency: timeout };
+    }
+    return { success: false, error: error.message, latency };
+  }
+}
+
+// Resolve using DNS-over-HTTPS server
+async function resolveWithDoH(fqdn, recordType, dohServer, timeout) {
+  const startTime = Date.now();
+  
+  try {
+    const type = recordType === 'A' ? 1 : 28;
+    
+    // Use JSON API format (supported by Cloudflare, Google, Quad9, etc.)
+    const url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
+    
+    console.log(`[IP What] DoH ${recordType} for ${fqdn} via ${dohServer}`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/dns-json'
+      },
+      cache: 'no-store'
+    });
+    
+    clearTimeout(timeoutId);
+    const latency = Date.now() - startTime;
+    
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}`, latency };
+    }
+    
+    const data = await response.json();
+    
+    if (data.Answer && data.Answer.length > 0) {
+      const ips = data.Answer
+        .filter(a => a.type === type)
+        .map(a => a.data);
+      
+      return {
+        success: true,
+        ips,
+        latency
+      };
+    }
+    
+    return { success: false, error: 'No records', latency };
+  } catch (error) {
+    const latency = Date.now() - startTime;
+    console.log(`[IP What] DoH ${recordType} error:`, error.message);
+    
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Timeout', latency: timeout };
+    }
+    return { success: false, error: error.message, latency };
+  }
 }
 
 // Listen for messages from popup

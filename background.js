@@ -139,44 +139,63 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
   const sizes = [16, 32, 48, 128];
   const imageData = {};
   
+  // Detect dark mode
+  const isDarkMode = self.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
+  
   for (const size of sizes) {
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
     
-    // Light background for better contrast
-    ctx.fillStyle = '#f0f0f0';
+    // Background adapts to system theme
+    ctx.fillStyle = isDarkMode ? '#2d2d2d' : '#f0f0f0';
     ctx.beginPath();
     ctx.roundRect(0, 0, size, size, size * 0.15);
     ctx.fill();
     
-    // Calculate font size - make it larger to fill the icon
-    const fontSize = size * 0.75;
+    // Calculate font size - maximize to fill the icon
+    const fontSize = size * 0.9;
     ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Colors - more saturated for visibility
-    const greenColor = '#2E7D32';  // Darker green for contrast on light bg
-    const redColor = '#C62828';     // Darker red for contrast on light bg
-    const grayColor = '#757575';
+    // Colors optimized for contrast on dark vs light backgrounds
+    let greenColor, redColor, grayColor;
+    if (isDarkMode) {
+      greenColor = '#4ADE80';  // Bright green for dark bg
+      redColor = '#F87171';     // Bright red for dark bg
+      grayColor = '#9CA3AF';    // Light gray for dark bg
+    } else {
+      greenColor = '#16A34A';  // Dark green for light bg
+      redColor = '#DC2626';     // Dark red for light bg
+      grayColor = '#6B7280';    // Dark gray for light bg
+    }
     
     // Get color based on status (undefined = gray, true = green, false = red)
     const color4 = ipv4Connected === undefined ? grayColor : (ipv4Connected ? greenColor : redColor);
     const color6 = ipv6Connected === undefined ? grayColor : (ipv6Connected ? greenColor : redColor);
     
-    // Draw "4" on the left - positioned to fill space
+    // Draw "4" on the left - positioned tight
     ctx.fillStyle = color4;
-    ctx.fillText('4', size * 0.28, size * 0.55);
+    ctx.fillText('4', size * 0.27, size * 0.55);
     
     // Draw "6" on the right  
     ctx.fillStyle = color6;
-    ctx.fillText('6', size * 0.72, size * 0.55);
+    ctx.fillText('6', size * 0.73, size * 0.55);
     
     // Get image data
     imageData[size] = ctx.getImageData(0, 0, size, size);
   }
   
   chrome.action.setIcon({ imageData });
+}
+
+// Listen for system theme changes
+if (self.matchMedia) {
+  self.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async () => {
+    // Re-render icon with new theme colors
+    const status = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
+    updateIcon(status.ipv4Status?.connected, status.ipv6Status?.connected);
+  });
 }
 
 // Listen for messages from popup

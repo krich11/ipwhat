@@ -5,8 +5,7 @@ const DEFAULT_SETTINGS = {
   ipv6Target: '2001:4860:4860::8888',
   checkInterval: 30,
   timeout: 5000,
-  dnsFqdn: 'www.google.com',
-  dohServer: 'https://cloudflare-dns.com/dns-query'
+  dnsFqdn: 'www.google.com'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -118,55 +117,29 @@ async function checkNow() {
 
 function updateDnsResults(dnsResults) {
   // Display the FQDN being tested
-  document.getElementById('dns-fqdn-display').textContent = `(${dnsResults.fqdn})`;
+  document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
-  // Update DoH header to show which server is being used
-  const dohServerName = getDohServerName(dnsResults.dohServer);
-  document.getElementById('dns-doh-header').textContent = dohServerName;
+  const resultEl = document.getElementById('dns-result');
+  const latencyEl = document.getElementById('dns-latency');
   
-  // Update System DNS results
-  updateDnsField('dns-system-a', 'dns-system-a-latency', dnsResults.systemA);
-  updateDnsField('dns-system-aaaa', 'dns-system-aaaa-latency', dnsResults.systemAAAA);
-  
-  // Update DoH results
-  updateDnsField('dns-doh-a', 'dns-doh-a-latency', dnsResults.dohA);
-  updateDnsField('dns-doh-aaaa', 'dns-doh-aaaa-latency', dnsResults.dohAAAA);
-}
-
-function updateDnsField(valueId, latencyId, result) {
-  const valueEl = document.getElementById(valueId);
-  const latencyEl = document.getElementById(latencyId);
-  
-  if (!result) {
-    valueEl.textContent = '-';
+  if (!dnsResults.systemDns) {
+    resultEl.textContent = '-';
+    resultEl.className = 'dns-test-result';
     latencyEl.textContent = '';
     return;
   }
   
-  if (result.success && result.ips && result.ips.length > 0) {
-    // Show first IP, indicate if there are more
-    const displayIp = result.ips[0];
-    valueEl.textContent = result.ips.length > 1 ? `${displayIp} (+${result.ips.length - 1})` : displayIp;
-    valueEl.title = result.ips.join('\n');
-    valueEl.classList.add('success');
-    valueEl.classList.remove('error');
+  const result = dnsResults.systemDns;
+  
+  if (result.success) {
+    resultEl.textContent = '✓ OK';
+    resultEl.className = 'dns-test-result success';
   } else {
-    valueEl.textContent = result.error || 'Failed';
-    valueEl.title = '';
-    valueEl.classList.add('error');
-    valueEl.classList.remove('success');
+    resultEl.textContent = '✗ ' + (result.error || 'Failed');
+    resultEl.className = 'dns-test-result error';
   }
   
   latencyEl.textContent = result.latency ? `${result.latency}ms` : '';
-}
-
-function getDohServerName(serverUrl) {
-  if (!serverUrl) return 'Custom DoH';
-  if (serverUrl.includes('cloudflare')) return 'Cloudflare';
-  if (serverUrl.includes('google')) return 'Google';
-  if (serverUrl.includes('quad9')) return 'Quad9';
-  if (serverUrl.includes('opendns')) return 'OpenDNS';
-  return 'Custom DoH';
 }
 
 function openSettings() {

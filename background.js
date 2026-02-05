@@ -7,8 +7,7 @@ const DEFAULT_SETTINGS = {
   ipv6Target: '2001:4860:4860::8888',
   checkInterval: 30, // seconds
   timeout: 5000, // milliseconds
-  dnsFqdn: 'www.google.com',
-  dohServer: 'https://cloudflare-dns.com/dns-query'
+  dnsFqdn: 'www.google.com'
 };
 
 // Initialize default settings on install
@@ -258,150 +257,62 @@ async function getLocalIPs() {
   return result;
 }
 
-// Perform DNS resolution checks
+// Perform DNS resolution check - tests if system DNS can resolve the hostname
 async function performDnsChecks(fqdn, dohServer, timeout) {
   const results = {
     fqdn,
-    systemA: null,      // System DNS - A record (IPv4)
-    systemAAAA: null,   // System DNS - AAAA record (IPv6)
-    dohA: null,         // DoH server - A record (IPv4)
-    dohAAAA: null,      // DoH server - AAAA record (IPv6)
-    dohServer
+    systemDns: null  // System DNS - can we resolve and reach the hostname?
   };
   
-  // Run all DNS checks in parallel
-  const [systemA, systemAAAA, dohA, dohAAAA] = await Promise.all([
-    resolveWithSystem(fqdn, 'A', timeout),
-    resolveWithSystem(fqdn, 'AAAA', timeout),
-    resolveWithDoH(fqdn, 'A', dohServer, timeout),
-    resolveWithDoH(fqdn, 'AAAA', dohServer, timeout)
-  ]);
-  
-  results.systemA = systemA;
-  results.systemAAAA = systemAAAA;
-  results.dohA = dohA;
-  results.dohAAAA = dohAAAA;
+  results.systemDns = await testSystemDns(fqdn, timeout);
   
   return results;
 }
 
-// Resolve using system DNS (via fetch to a service that returns resolved IP)
-async function resolveWithSystem(fqdn, recordType, timeout) {
+// Test system DNS by attempting to fetch a hostname-based URL
+// If this works, DNS resolution is functioning
+// If IPv4/IPv6 connectivity works (by IP) but this fails, DNS is broken
+async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
   try {
-    // Use Google's DoH JSON API
-    // Google uses /resolve endpoint with type as string (A, AAAA)
-    const url = `https://dns.google/resolve?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
+    // Fetch the hostname via HTTPS - this tests DNS resolution
+    const url = `https://${fqdn}/`;
     
-    console.log(`[IP What] System DNS ${recordType} for ${fqdn}: ${url}`);
+    console.log(`[IP What] Testing system DNS: ${url}`);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        'Accept': 'application/dns-json'
-      },
+      mode: 'no-cors',  // We don't care about the response, just that we connected
       cache: 'no-store'
     });
     
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}`, latency };
-    }
+    console.log(`[IP What] System DNS success in ${latency}ms`);
     
-    const data = await response.json();
-    
-    // Type 1 = A (IPv4), Type 28 = AAAA (IPv6)
-    const expectedType = recordType === 'A' ? 1 : 28;
-    
-    if (data.Answer && data.Answer.length > 0) {
-      const ips = data.Answer
-        .filter(a => a.type === expectedType)
-        .map(a => a.data);
-      
-      return {
-        success: true,
-        ips,
-        latency
-      };
-    }
-    
-    return { success: false, error: 'No records', latency };
+    return {
+      success: true,
+      latency
+    };
   } catch (error) {
     const latency = Date.now() - startTime;
-    console.log(`[IP What] System DNS ${recordType} error:`, error.message);
+    console.log(`[IP What] System DNS error:`, error.message);
     
     if (error.name === 'AbortError') {
       return { success: false, error: 'Timeout', latency: timeout };
     }
-    return { success: false, error: error.message, latency };
-  }
-}
-
-// Resolve using DNS-over-HTTPS server
-async function resolveWithDoH(fqdn, recordType, dohServer, timeout) {
-  const startTime = Date.now();
-  
-  try {
-    // Type 1 = A (IPv4), Type 28 = AAAA (IPv6)
-    const expectedType = recordType === 'A' ? 1 : 28;
     
-    // Build URL based on provider - Cloudflare needs ct parameter
-    let url;
-    if (dohServer.includes('cloudflare')) {
-      url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}&ct=application/dns-json`;
-    } else {
-      // Google, Quad9, OpenDNS use similar format
-      url = `${dohServer}?name=${encodeURIComponent(fqdn)}&type=${recordType}`;
+    // Check if it's a DNS failure vs connection failure
+    // DNS failures typically show as "net::ERR_NAME_NOT_RESOLVED"
+    if (error.message.includes('ERR_NAME_NOT_RESOLVED') || error.message.includes('getaddrinfo')) {
+      return { success: false, error: 'DNS failed', latency };
     }
     
-    console.log(`[IP What] DoH ${recordType} for ${fqdn} via ${url}`);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/dns-json'
-      },
-      cache: 'no-store'
-    });
-    
-    clearTimeout(timeoutId);
-    const latency = Date.now() - startTime;
-    
-    if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}`, latency };
-    }
-    
-    const data = await response.json();
-    
-    if (data.Answer && data.Answer.length > 0) {
-      const ips = data.Answer
-        .filter(a => a.type === expectedType)
-        .map(a => a.data);
-      
-      return {
-        success: true,
-        ips,
-        latency
-      };
-    }
-    
-    return { success: false, error: 'No records', latency };
-  } catch (error) {
-    const latency = Date.now() - startTime;
-    console.log(`[IP What] DoH ${recordType} error:`, error.message);
-    
-    if (error.name === 'AbortError') {
-      return { success: false, error: 'Timeout', latency: timeout };
-    }
     return { success: false, error: error.message, latency };
   }
 }

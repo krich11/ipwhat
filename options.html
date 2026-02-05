@@ -40,18 +40,7 @@
       <div class="form-group">
         <label for="dns-fqdn">Test Domain (FQDN)</label>
         <input type="text" id="dns-fqdn" placeholder="www.google.com">
-        <p class="help-text">Domain to resolve for A (IPv4) and AAAA (IPv6) records</p>
-      </div>
-      
-      <div class="form-group">
-        <label for="doh-server">DNS-over-HTTPS Server</label>
-        <select id="doh-server">
-          <option value="https://cloudflare-dns.com/dns-query">Cloudflare (1.1.1.1)</option>
-          <option value="https://dns.google/dns-query">Google (8.8.8.8)</option>
-          <option value="https://dns.quad9.net/dns-query">Quad9 (9.9.9.9)</option>
-          <option value="https://doh.opendns.com/dns-query">OpenDNS</option>
-        </select>
-        <p class="help-text">Custom DNS server for comparison (uses DNS-over-HTTPS)</p>
+        <p class="help-text">Hostname to test system DNS resolution. If IPv4/IPv6 work but this fails, your local DNS is broken.</p>
       </div>
       
       <h2>Preset Targets</h2>

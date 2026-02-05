@@ -262,77 +262,54 @@ h2 {
 }
 
 /* DNS Section */
-.dns-section h2 {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.dns-fqdn {
-  font-weight: 400;
-  font-size: 10px;
-  color: #999;
-  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-}
-
-.dns-comparison {
-  display: flex;
-  gap: 8px;
-}
-
-.dns-column {
-  flex: 1;
-  background: #f8f9fa;
-  border-radius: 6px;
-  padding: 6px 8px;
-}
-
-.dns-header {
-  font-size: 10px;
-  font-weight: 600;
-  color: #666;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.dns-row {
+.dns-status-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 0;
+  gap: 8px;
+  padding: 6px 0;
 }
 
-.dns-label {
-  font-size: 11px;
+.dns-test-label {
+  font-size: 12px;
   font-weight: 500;
-  color: #888;
-  min-width: 38px;
+  color: #666;
 }
 
-.dns-value {
+.dns-test-fqdn {
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: #333;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
   flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.dns-value.success {
+.dns-test-result {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dns-test-result.success {
   color: #2e7d32;
 }
 
-.dns-value.error {
+.dns-test-result.error {
   color: #c62828;
 }
 
-.dns-latency {
-  font-size: 9px;
+.dns-test-latency {
+  font-size: 11px;
   color: #1a73e8;
-  min-width: 35px;
+  min-width: 50px;
   text-align: right;
+}
+
+.dns-help {
+  font-size: 10px;
+  color: #999;
+  margin: 4px 0 0 0;
+  font-style: italic;
 }
 
 /* Footer */

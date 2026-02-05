@@ -60,6 +60,8 @@ async function checkConnectivity(target, type, timeout) {
     // Use HTTPS - if TCP connects at all (even with cert error), IP is reachable
     const url = `https://${formattedTarget}/`;
     
+    console.log(`[IP What] Checking ${type}: ${url}`);
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
@@ -72,6 +74,8 @@ async function checkConnectivity(target, type, timeout) {
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
+    console.log(`[IP What] ${type} success in ${latency}ms`);
+    
     // Clean success - connected and got a response
     return {
       connected: true,
@@ -80,8 +84,9 @@ async function checkConnectivity(target, type, timeout) {
       error: null
     };
   } catch (error) {
-    clearTimeout;
     const latency = Date.now() - startTime;
+    
+    console.log(`[IP What] ${type} error: ${error.name} - ${error.message} (${latency}ms)`);
     
     // AbortError = timeout, likely no connectivity
     if (error.name === 'AbortError') {
@@ -93,34 +98,14 @@ async function checkConnectivity(target, type, timeout) {
       };
     }
     
-    // TypeError with "Failed to fetch" could be:
-    // - Network error (no route) = no connectivity
-    // - Cert error / connection refused = TCP worked, so IP is reachable
-    // 
-    // Unfortunately, browsers don't expose the specific error type for security.
-    // But if the error happened quickly (< timeout), it likely means TCP connected
-    // but something else failed (cert, refused, etc.) = IP is reachable
-    // If it took close to timeout, it's likely a network timeout = no connectivity
-    
-    const quickFailure = latency < (timeout * 0.8);
-    
-    if (quickFailure) {
-      // Fast failure usually means TCP connected but TLS/app layer failed
-      // This still proves IP connectivity
-      return {
-        connected: true,
-        latency,
-        lastChecked: Date.now(),
-        error: null
-      };
-    }
-    
-    // Slow failure - likely network timeout, no connectivity
+    // For any other error (TypeError/Failed to fetch), treat as no connectivity
+    // We can't reliably distinguish "connection refused" from "no route to host"
+    // in a browser context - both throw TypeError
     return {
       connected: false,
       latency,
       lastChecked: Date.now(),
-      error: 'No connectivity'
+      error: 'Connection failed'
     };
   }
 }
@@ -146,9 +131,9 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
     // Clear canvas (transparent background works on both dark/light toolbars)
     ctx.clearRect(0, 0, size, size);
     
-    // Maximize font size - fill the entire icon height
-    const fontSize = size * 1.1;
-    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    // Font size maximized, less bold to prevent overlap
+    const fontSize = size * 0.95;
+    ctx.font = `500 ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -167,15 +152,15 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
     ctx.strokeStyle = '#000000';
     ctx.lineJoin = 'round';
     
-    // Draw "4" on the left - tight to edge
+    // Draw "4" on the left - spread apart for clear gap
     ctx.fillStyle = color4;
-    ctx.strokeText('4', size * 0.25, size * 0.52);
-    ctx.fillText('4', size * 0.25, size * 0.52);
+    ctx.strokeText('4', size * 0.22, size * 0.52);
+    ctx.fillText('4', size * 0.22, size * 0.52);
     
-    // Draw "6" on the right - tight to edge
+    // Draw "6" on the right - spread apart for clear gap
     ctx.fillStyle = color6;
-    ctx.strokeText('6', size * 0.75, size * 0.52);
-    ctx.fillText('6', size * 0.75, size * 0.52);
+    ctx.strokeText('6', size * 0.78, size * 0.52);
+    ctx.fillText('6', size * 0.78, size * 0.52);
     
     // Get image data
     imageData[size] = ctx.getImageData(0, 0, size, size);

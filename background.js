@@ -14,8 +14,14 @@ chrome.runtime.onInstalled.addListener(async () => {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   await chrome.storage.sync.set(settings);
   
+  // Set initial icon (gray - unknown state)
+  updateIcon(undefined, undefined);
+  
   // Set up periodic connectivity check
   chrome.alarms.create('connectivityCheck', { periodInMinutes: 1 });
+  
+  // Run initial check
+  performConnectivityCheck();
 });
 
 // Handle periodic connectivity checks
@@ -121,22 +127,56 @@ async function checkConnectivity(target, type, timeout) {
 
 // Update extension badge based on connectivity status
 function updateBadge(ipv4Status, ipv6Status) {
-  let badgeText = '';
-  let badgeColor = '#888888';
+  // Update the dynamic icon
+  updateIcon(ipv4Status?.connected, ipv6Status?.connected);
   
-  if (ipv4Status?.connected && ipv6Status?.connected) {
-    badgeText = '✓';
-    badgeColor = '#4CAF50'; // Green - both connected
-  } else if (ipv4Status?.connected || ipv6Status?.connected) {
-    badgeText = '!';
-    badgeColor = '#FF9800'; // Orange - partial connectivity
-  } else {
-    badgeText = '✗';
-    badgeColor = '#F44336'; // Red - no connectivity
+  // Clear badge text since the icon now shows status
+  chrome.action.setBadgeText({ text: '' });
+}
+
+// Generate dynamic icon showing "46" with colors based on connectivity
+async function updateIcon(ipv4Connected, ipv6Connected) {
+  const sizes = [16, 32, 48, 128];
+  const imageData = {};
+  
+  for (const size of sizes) {
+    const canvas = new OffscreenCanvas(size, size);
+    const ctx = canvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, size, size, size * 0.15);
+    ctx.fill();
+    
+    // Calculate font size based on icon size
+    const fontSize = size * 0.55;
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Colors
+    const greenColor = '#4CAF50';
+    const redColor = '#F44336';
+    const grayColor = '#666666';
+    
+    // Get color based on status (undefined = gray, true = green, false = red)
+    const color4 = ipv4Connected === undefined ? grayColor : (ipv4Connected ? greenColor : redColor);
+    const color6 = ipv6Connected === undefined ? grayColor : (ipv6Connected ? greenColor : redColor);
+    
+    // Draw "4" on the left
+    ctx.fillStyle = color4;
+    ctx.fillText('4', size * 0.3, size * 0.55);
+    
+    // Draw "6" on the right  
+    ctx.fillStyle = color6;
+    ctx.fillText('6', size * 0.7, size * 0.55);
+    
+    // Get image data
+    imageData[size] = ctx.getImageData(0, 0, size, size);
   }
   
-  chrome.action.setBadgeText({ text: badgeText });
-  chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+  chrome.action.setIcon({ imageData });
 }
 
 // Listen for messages from popup

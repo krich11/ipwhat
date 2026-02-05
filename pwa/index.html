@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>IP What</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="status-display">
+      <span id="digit4" class="digit gray">4</span>
+      <span id="digit6" class="digit gray">6</span>
+    </div>
+    
+    <div class="details">
+      <div class="row">
+        <span class="label">IPv4</span>
+        <span id="ipv4-status" class="value">Checking...</span>
+        <span id="ipv4-latency" class="latency"></span>
+      </div>
+      <div class="row">
+        <span class="label">IPv6</span>
+        <span id="ipv6-status" class="value">Checking...</span>
+        <span id="ipv6-latency" class="latency"></span>
+      </div>
+    </div>
+    
+    <div id="last-check" class="last-check"></div>
+    
+    <button id="check-btn" class="check-btn">Check Now</button>
+    
+    <div class="settings">
+      <details>
+        <summary>Settings</summary>
+        <div class="settings-content">
+          <label>
+            IPv4 Target
+            <input type="text" id="ipv4-target" value="8.8.8.8">
+          </label>
+          <label>
+            IPv6 Target
+            <input type="text" id="ipv6-target" value="2001:4860:4860::8888">
+          </label>
+          <button id="save-settings" class="save-btn">Save</button>
+        </div>
+      </details>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>

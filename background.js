@@ -203,6 +203,8 @@ async function getPublicIP(type, timeout) {
       url = 'https://api64.ipify.org?format=text';
     }
     
+    console.log(`[IP What] Getting public ${type} from: ${url}`);
+    
     const response = await fetch(url, {
       signal: controller.signal,
       cache: 'no-store'
@@ -210,14 +212,19 @@ async function getPublicIP(type, timeout) {
     
     clearTimeout(timeoutId);
     
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log(`[IP What] Public ${type} response not ok: ${response.status}`);
+      return null;
+    }
     
     const ip = (await response.text()).trim();
+    console.log(`[IP What] Public ${type} result: ${ip}`);
     
     // For IPv6 request, verify it's actually IPv6 (contains colons)
     if (type === 'ipv6') {
       if (!ip.includes(':')) {
         // Got an IPv4 address, meaning no IPv6 connectivity
+        console.log(`[IP What] Public IPv6 returned IPv4, no IPv6 connectivity`);
         return null;
       }
     }

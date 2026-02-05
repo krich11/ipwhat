@@ -173,24 +173,19 @@ async function getLocalIPs() {
         // Skip loopback and link-local
         if (!ip.startsWith('127.') && !ip.startsWith('0.') && !ip.startsWith('169.254.')) {
           result.ipv4 = ip;
+          console.log('[IP What] Found local IPv4:', ip);
         }
       }
       
-      // Match IPv6 addresses - look for pattern with colons
-      // ICE candidates format: "candidate:... typ host ... address <IP>"
-      const parts = candidate.split(' ');
-      for (const part of parts) {
-        // Check if this part looks like an IPv6 address (contains multiple colons)
-        if (part.includes(':') && !part.includes('candidate:') && !part.includes('typ')) {
-          const colonCount = (part.match(/:/g) || []).length;
-          // IPv6 has at least 2 colons (even compressed like ::1)
-          if (colonCount >= 2 && !result.ipv6) {
-            const ip = part;
-            // Skip link-local (fe80::)
-            if (!ip.toLowerCase().startsWith('fe80')) {
-              result.ipv6 = ip;
-            }
-          }
+      // Match IPv6 addresses - they appear after the port number in the candidate
+      // Format: "... 2605:59c1:1539:b378:9d2a:c92f:a85c:1d83 55026 typ host ..."
+      const ipv6Match = candidate.match(/\s([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})\s+\d+\s+typ/);
+      if (ipv6Match && !result.ipv6) {
+        const ip = ipv6Match[1];
+        // Skip link-local (fe80::)
+        if (!ip.toLowerCase().startsWith('fe80')) {
+          result.ipv6 = ip;
+          console.log('[IP What] Found local IPv6:', ip);
         }
       }
     }

@@ -164,6 +164,8 @@ async function getLocalIPs() {
     
     // Parse local IPs from candidates
     for (const candidate of candidates) {
+      console.log('[IP What] ICE candidate:', candidate);
+      
       // Match IPv4 addresses
       const ipv4Match = candidate.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/);
       if (ipv4Match && !result.ipv4) {
@@ -174,10 +176,24 @@ async function getLocalIPs() {
         }
       }
       
-      // Match IPv6 addresses (simplified pattern for common formats)
-      const ipv6Match = candidate.match(/\b([0-9a-fA-F:]{7,})\b/);
-      if (ipv6Match && !result.ipv6) {
-        const ip = ipv6Match[1];
+      // Match IPv6 addresses - look for pattern with colons
+      // ICE candidates format: "candidate:... typ host ... address <IP>"
+      const parts = candidate.split(' ');
+      for (const part of parts) {
+        // Check if this part looks like an IPv6 address (contains multiple colons)
+        if (part.includes(':') && !part.includes('candidate:') && !part.includes('typ')) {
+          const colonCount = (part.match(/:/g) || []).length;
+          // IPv6 has at least 2 colons (even compressed like ::1)
+          if (colonCount >= 2 && !result.ipv6) {
+            const ip = part;
+            // Skip link-local (fe80::)
+            if (!ip.toLowerCase().startsWith('fe80')) {
+              result.ipv6 = ip;
+            }
+          }
+        }
+      }
+    }
         // Must contain at least 2 colons and not be link-local
         if (ip.split(':').length >= 3 && !ip.toLowerCase().startsWith('fe80')) {
           result.ipv6 = ip;

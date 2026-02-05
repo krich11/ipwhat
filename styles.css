@@ -192,6 +192,72 @@ body {
   background: #e0e0e0;
 }
 
+/* Jitter colors */
+.graph-segment.jitter-low {
+  background: #4CAF50;
+}
+
+.graph-segment.jitter-medium {
+  background: #FF9800;
+}
+
+.graph-segment.jitter-high {
+  background: #F44336;
+}
+
+/* Packet loss colors */
+.graph-segment.loss-none {
+  background: #4CAF50;
+}
+
+.graph-segment.loss-low {
+  background: #FF9800;
+}
+
+.graph-segment.loss-high {
+  background: #F44336;
+}
+
+/* Metric graph bar (slightly smaller) */
+.metric-bar {
+  flex: 1;
+}
+
+/* Current metric value display */
+.metric-value {
+  font-size: 10px;
+  font-weight: 600;
+  color: #666;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Jitter legend colors */
+.legend-dot.jitter-low {
+  background: #4CAF50;
+}
+
+.legend-dot.jitter-medium {
+  background: #FF9800;
+}
+
+.legend-dot.jitter-high {
+  background: #F44336;
+}
+
+/* Packet loss legend colors */
+.legend-dot.loss-none {
+  background: #4CAF50;
+}
+
+.legend-dot.loss-low {
+  background: #FF9800;
+}
+
+.legend-dot.loss-high {
+  background: #F44336;
+}
+
 .graph-legend {
   display: flex;
   justify-content: center;

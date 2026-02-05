@@ -271,6 +271,17 @@ async function loadHistory() {
   renderGraph('ipv4-graph', connectivityHistory, 'ipv4');
   renderGraph('ipv6-graph', connectivityHistory, 'ipv6');
   
+  // Render jitter graphs
+  renderMetricGraph('ipv4-jitter-graph', connectivityHistory, 'ipv4Jitter', 'jitter');
+  renderMetricGraph('ipv6-jitter-graph', connectivityHistory, 'ipv6Jitter', 'jitter');
+  
+  // Render packet loss graphs
+  renderMetricGraph('ipv4-loss-graph', connectivityHistory, 'ipv4PacketLoss', 'loss');
+  renderMetricGraph('ipv6-loss-graph', connectivityHistory, 'ipv6PacketLoss', 'loss');
+  
+  // Update current metric values
+  updateCurrentMetricValues(connectivityHistory);
+  
   // Render recent events
   renderEvents(connectivityEvents);
 }
@@ -338,6 +349,100 @@ function getTimeLabel(bucketsAgo) {
   return `${hours}h ago`;
 }
 
+function renderMetricGraph(elementId, history, metricKey, metricType) {
+  const container = document.getElementById(elementId);
+  container.innerHTML = '';
+  
+  if (history.length === 0) {
+    container.innerHTML = '<span class="no-data">No data yet</span>';
+    return;
+  }
+  
+  // Create 48 buckets (30 min each for 24 hours)
+  const buckets = [];
+  const now = Date.now();
+  const bucketDuration = 30 * 60 * 1000; // 30 minutes
+  
+  for (let i = 47; i >= 0; i--) {
+    const bucketStart = now - (i + 1) * bucketDuration;
+    const bucketEnd = now - i * bucketDuration;
+    
+    const entriesInBucket = history.filter(h => 
+      h.timestamp >= bucketStart && h.timestamp < bucketEnd
+    );
+    
+    let status = 'unknown';
+    let avgValue = null;
+    
+    if (entriesInBucket.length > 0) {
+      const values = entriesInBucket
+        .map(h => h[metricKey])
+        .filter(v => v !== null && v !== undefined);
+      
+      if (values.length > 0) {
+        avgValue = values.reduce((a, b) => a + b, 0) / values.length;
+        
+        if (metricType === 'jitter') {
+          // Jitter: low < 10ms, medium 10-50ms, high > 50ms
+          if (avgValue < 10) {
+            status = 'jitter-low';
+          } else if (avgValue <= 50) {
+            status = 'jitter-medium';
+          } else {
+            status = 'jitter-high';
+          }
+        } else if (metricType === 'loss') {
+          // Packet loss: none = 0%, low = 1-5%, high > 5%
+          if (avgValue === 0) {
+            status = 'loss-none';
+          } else if (avgValue <= 5) {
+            status = 'loss-low';
+          } else {
+            status = 'loss-high';
+          }
+        }
+      }
+    }
+    
+    buckets.push({ status, value: avgValue });
+  }
+  
+  // Render buckets
+  buckets.forEach((bucket, i) => {
+    const bar = document.createElement('div');
+    bar.className = `graph-segment ${bucket.status}`;
+    
+    const timeLabel = getTimeLabel(47 - i);
+    const valueLabel = bucket.value !== null 
+      ? (metricType === 'jitter' ? `${Math.round(bucket.value)}ms` : `${Math.round(bucket.value)}%`)
+      : 'No data';
+    bar.title = `${timeLabel}: ${valueLabel}`;
+    
+    container.appendChild(bar);
+  });
+}
+
+function updateCurrentMetricValues(history) {
+  // Get the most recent entry with jitter/loss data
+  const recent = history.slice(-1)[0];
+  
+  if (recent) {
+    const ipv4Jitter = recent.ipv4Jitter;
+    const ipv6Jitter = recent.ipv6Jitter;
+    const ipv4Loss = recent.ipv4PacketLoss;
+    const ipv6Loss = recent.ipv6PacketLoss;
+    
+    document.getElementById('ipv4-jitter-value').textContent = 
+      ipv4Jitter !== null ? `${ipv4Jitter}ms` : '-';
+    document.getElementById('ipv6-jitter-value').textContent = 
+      ipv6Jitter !== null ? `${ipv6Jitter}ms` : '-';
+    document.getElementById('ipv4-loss-value').textContent = 
+      ipv4Loss !== null ? `${ipv4Loss}%` : '-';
+    document.getElementById('ipv6-loss-value').textContent = 
+      ipv6Loss !== null ? `${ipv6Loss}%` : '-';
+  }
+}
+
 function renderEvents(events) {
   const container = document.getElementById('event-list');
   
@@ -377,14 +482,18 @@ async function exportCSV() {
   }
   
   // Build CSV
-  const headers = ['Timestamp', 'DateTime', 'IPv4', 'IPv4 Latency', 'IPv6', 'IPv6 Latency'];
+  const headers = ['Timestamp', 'DateTime', 'IPv4', 'IPv4 Latency', 'IPv4 Jitter', 'IPv4 Packet Loss', 'IPv6', 'IPv6 Latency', 'IPv6 Jitter', 'IPv6 Packet Loss'];
   const rows = connectivityHistory.map(h => [
     h.timestamp,
     new Date(h.timestamp).toISOString(),
     h.ipv4 === true ? 'connected' : (h.ipv4 === false ? 'disconnected' : 'unknown'),
     h.ipv4Latency ?? '',
+    h.ipv4Jitter ?? '',
+    h.ipv4PacketLoss ?? '',
     h.ipv6 === true ? 'connected' : (h.ipv6 === false ? 'disconnected' : 'unknown'),
-    h.ipv6Latency ?? ''
+    h.ipv6Latency ?? '',
+    h.ipv6Jitter ?? '',
+    h.ipv6PacketLoss ?? ''
   ]);
   
   const csv = [headers, ...rows].map(row => row.join(',')).join('\n');

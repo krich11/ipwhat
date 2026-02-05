@@ -368,18 +368,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// Calculate jitter (variance in latency) from recent samples
+function calculateJitter(history, type, windowSize = 10) {
+  const latencyKey = `${type}Latency`;
+  const recentLatencies = history
+    .slice(-windowSize)
+    .map(h => h[latencyKey])
+    .filter(l => l !== null && l !== undefined);
+  
+  if (recentLatencies.length < 2) return null;
+  
+  // Calculate mean
+  const mean = recentLatencies.reduce((a, b) => a + b, 0) / recentLatencies.length;
+  
+  // Calculate variance
+  const variance = recentLatencies.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentLatencies.length;
+  
+  // Jitter is standard deviation of latency
+  return Math.round(Math.sqrt(variance));
+}
+
+// Calculate packet loss percentage from recent samples
+function calculatePacketLoss(history, type, windowSize = 20) {
+  const recentEntries = history.slice(-windowSize);
+  if (recentEntries.length === 0) return null;
+  
+  const total = recentEntries.length;
+  const failures = recentEntries.filter(h => h[type] === false).length;
+  
+  return Math.round((failures / total) * 100);
+}
+
 // Store history entry
 async function storeHistoryEntry(timestamp, ipv4Status, ipv6Status) {
   const { connectivityHistory = [] } = await chrome.storage.local.get('connectivityHistory');
   
-  // Add new entry
-  connectivityHistory.push({
+  // Add new entry first (without jitter/packet loss)
+  const newEntry = {
     timestamp,
     ipv4: ipv4Status?.connected ?? null,
     ipv6: ipv6Status?.connected ?? null,
     ipv4Latency: ipv4Status?.latency ?? null,
     ipv6Latency: ipv6Status?.latency ?? null
-  });
+  };
+  
+  connectivityHistory.push(newEntry);
+  
+  // Calculate jitter and packet loss based on updated history
+  newEntry.ipv4Jitter = calculateJitter(connectivityHistory, 'ipv4');
+  newEntry.ipv6Jitter = calculateJitter(connectivityHistory, 'ipv6');
+  newEntry.ipv4PacketLoss = calculatePacketLoss(connectivityHistory, 'ipv4');
+  newEntry.ipv6PacketLoss = calculatePacketLoss(connectivityHistory, 'ipv6');
   
   // Keep only last 24 hours (assuming 30 second intervals = 2880 entries max)
   const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);

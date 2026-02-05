@@ -122,6 +122,48 @@
       </div>
       
       <div class="history-section">
+        <h2>Jitter (Latency Variance)</h2>
+        <div class="history-graph">
+          <div class="graph-row">
+            <span class="graph-label">IPv4</span>
+            <div class="graph-bar metric-bar" id="ipv4-jitter-graph"></div>
+            <span class="metric-value" id="ipv4-jitter-value">-</span>
+          </div>
+          <div class="graph-row">
+            <span class="graph-label">IPv6</span>
+            <div class="graph-bar metric-bar" id="ipv6-jitter-graph"></div>
+            <span class="metric-value" id="ipv6-jitter-value">-</span>
+          </div>
+        </div>
+        <div class="graph-legend">
+          <span class="legend-item"><span class="legend-dot jitter-low"></span>&lt;10ms</span>
+          <span class="legend-item"><span class="legend-dot jitter-medium"></span>10-50ms</span>
+          <span class="legend-item"><span class="legend-dot jitter-high"></span>&gt;50ms</span>
+        </div>
+      </div>
+      
+      <div class="history-section">
+        <h2>Packet Loss</h2>
+        <div class="history-graph">
+          <div class="graph-row">
+            <span class="graph-label">IPv4</span>
+            <div class="graph-bar metric-bar" id="ipv4-loss-graph"></div>
+            <span class="metric-value" id="ipv4-loss-value">-</span>
+          </div>
+          <div class="graph-row">
+            <span class="graph-label">IPv6</span>
+            <div class="graph-bar metric-bar" id="ipv6-loss-graph"></div>
+            <span class="metric-value" id="ipv6-loss-value">-</span>
+          </div>
+        </div>
+        <div class="graph-legend">
+          <span class="legend-item"><span class="legend-dot loss-none"></span>0%</span>
+          <span class="legend-item"><span class="legend-dot loss-low"></span>1-5%</span>
+          <span class="legend-item"><span class="legend-dot loss-high"></span>&gt;5%</span>
+        </div>
+      </div>
+      
+      <div class="history-section">
         <h2>Recent Events</h2>
         <div class="event-list" id="event-list">
           <div class="no-events">No events recorded yet</div>

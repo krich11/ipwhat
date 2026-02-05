@@ -46,6 +46,8 @@ async function performConnectivityCheck() {
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();
   
+  console.log('[IP What] Storing results - publicIPv4:', publicIPv4, 'publicIPv6:', publicIPv6);
+  
   await chrome.storage.local.set({
     lastCheck: Date.now(),
     ipv4Status,

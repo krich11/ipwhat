@@ -6,8 +6,16 @@
   padding: 0;
 }
 
-html {
-  overflow: hidden;
+html, body {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 body {
@@ -16,9 +24,6 @@ body {
   line-height: 1.5;
   color: #333;
   background: #fff;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
 }
 
 .container {

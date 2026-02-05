@@ -14,11 +14,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('settings-form').addEventListener('submit', saveSettings);
   document.getElementById('reset-defaults').addEventListener('click', resetDefaults);
   
-  // Preset buttons
-  document.querySelectorAll('.btn-preset').forEach(btn => {
+  // Preset pill buttons
+  document.querySelectorAll('.pill').forEach(btn => {
     btn.addEventListener('click', () => {
+      // Clear active state from all pills
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      
       document.getElementById('ipv4-target').value = btn.dataset.ipv4;
       document.getElementById('ipv6-target').value = btn.dataset.ipv6;
+      if (btn.dataset.dns) {
+        document.getElementById('dns-fqdn').value = btn.dataset.dns;
+      }
     });
   });
 });

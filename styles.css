@@ -360,68 +360,184 @@ h2 {
   background: #d2d4d7;
 }
 
-/* Options Page Specific */
-.form-group {
+/* Options Page */
+.options-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.options-header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a73e8;
+  margin: 0;
+}
+
+.settings-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
   margin-bottom: 16px;
 }
 
-.form-group label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: #333;
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"] {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: monospace;
-  transition: border-color 0.2s ease;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
-}
-
-.help-text {
-  font-size: 11px;
+.settings-section h2 {
+  font-size: 12px;
+  font-weight: 600;
   color: #666;
-  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+  padding: 0;
+  border: none;
 }
 
-/* Presets */
-.presets {
+.section-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.btn-preset {
-  flex: none;
-  padding: 8px 16px;
-  background: #e3f2fd;
-  color: #1a73e8;
-  font-size: 12px;
+.section-header h2 {
+  margin: 0;
 }
 
-.btn-preset:hover {
+.preset-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #e3f2fd;
+  color: #1a73e8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill:hover {
   background: #bbdefb;
+}
+
+.pill.active {
+  background: #1a73e8;
+  color: #fff;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.field input[type="text"],
+.field input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  background: #fff;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+}
+
+.field-hint {
+  font-size: 10px;
+  color: #999;
+  margin-top: 2px;
+  display: block;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.input-with-unit input {
+  flex: 1;
+}
+
+.input-with-unit .unit {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+}
+
+.options-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #666;
 }
 
 /* Save Status */
 .save-status {
-  margin-top: 16px;
-  padding: 10px;
-  border-radius: 6px;
-  text-align: center;
-  font-size: 13px;
-  min-height: 40px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  min-height: auto;
+}
+
+.save-status:empty {
+  display: none;
 }
 
 .save-status.success {

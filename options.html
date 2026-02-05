@@ -7,72 +7,70 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container options-container">
-    <h1>IP What Settings</h1>
-    <p class="subtitle">Configure connectivity check targets</p>
+  <div class="options-page">
+    <div class="options-header">
+      <h1>⚙️ Settings</h1>
+      <div id="save-status" class="save-status"></div>
+    </div>
     
     <form id="settings-form">
-      <div class="form-group">
-        <label for="ipv4-target">IPv4 Target</label>
-        <input type="text" id="ipv4-target" placeholder="8.8.8.8">
-        <p class="help-text">Default: Google DNS (8.8.8.8). Any IP with port 443 open will work.</p>
-      </div>
+      <!-- Connectivity Targets Section -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>Connectivity Targets</h2>
+          <div class="preset-pills">
+            <button type="button" class="pill" data-ipv4="8.8.8.8" data-ipv6="2001:4860:4860::8888" data-dns="www.google.com">Google</button>
+            <button type="button" class="pill" data-ipv4="1.1.1.1" data-ipv6="2606:4700:4700::1111" data-dns="www.cloudflare.com">Cloudflare</button>
+            <button type="button" class="pill" data-ipv4="9.9.9.9" data-ipv6="2620:fe::fe" data-dns="www.quad9.net">Quad9</button>
+            <button type="button" class="pill" data-ipv4="208.67.222.222" data-ipv6="2620:119:35::35" data-dns="www.opendns.com">OpenDNS</button>
+          </div>
+        </div>
+        
+        <div class="field-row">
+          <div class="field">
+            <label for="ipv4-target">IPv4</label>
+            <input type="text" id="ipv4-target" placeholder="8.8.8.8">
+          </div>
+          <div class="field">
+            <label for="ipv6-target">IPv6</label>
+            <input type="text" id="ipv6-target" placeholder="2001:4860:4860::8888">
+          </div>
+        </div>
+        
+        <div class="field">
+          <label for="dns-fqdn">DNS Test Domain</label>
+          <input type="text" id="dns-fqdn" placeholder="www.google.com">
+          <span class="field-hint">Tests if hostname resolution works</span>
+        </div>
+      </section>
       
-      <div class="form-group">
-        <label for="ipv6-target">IPv6 Target</label>
-        <input type="text" id="ipv6-target" placeholder="2001:4860:4860::8888">
-        <p class="help-text">Default: Google DNS (2001:4860:4860::8888). Any IP with port 443 open will work.</p>
-      </div>
+      <!-- Timing Section -->
+      <section class="settings-section">
+        <h2>Timing</h2>
+        <div class="field-row">
+          <div class="field">
+            <label for="timeout">Timeout</label>
+            <div class="input-with-unit">
+              <input type="number" id="timeout" min="1000" max="30000" step="500" placeholder="5000">
+              <span class="unit">ms</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="check-interval">Check Interval</label>
+            <div class="input-with-unit">
+              <input type="number" id="check-interval" min="10" max="300" step="10" placeholder="30">
+              <span class="unit">sec</span>
+            </div>
+          </div>
+        </div>
+      </section>
       
-      <div class="form-group">
-        <label for="timeout">Timeout (ms)</label>
-        <input type="number" id="timeout" min="1000" max="30000" step="500" placeholder="5000">
-        <p class="help-text">How long to wait for a response before considering the connection failed</p>
-      </div>
-      
-      <div class="form-group">
-        <label for="check-interval">Check Interval (seconds)</label>
-        <input type="number" id="check-interval" min="10" max="300" step="10" placeholder="30">
-        <p class="help-text">How often to automatically check connectivity</p>
-      </div>
-      
-      <h2>DNS Resolution</h2>
-      <div class="form-group">
-        <label for="dns-fqdn">Test Domain (FQDN)</label>
-        <input type="text" id="dns-fqdn" placeholder="www.google.com">
-        <p class="help-text">Hostname to test system DNS resolution. If IPv4/IPv6 work but this fails, your local DNS is broken.</p>
-      </div>
-      
-      <h2>Preset Targets</h2>
-      <div class="presets">
-        <button type="button" class="btn btn-preset" data-ipv4="8.8.8.8" data-ipv6="2001:4860:4860::8888">Google DNS</button>
-        <button type="button" class="btn btn-preset" data-ipv4="1.1.1.1" data-ipv6="2606:4700:4700::1111">Cloudflare</button>
-        <button type="button" class="btn btn-preset" data-ipv4="9.9.9.9" data-ipv6="2620:fe::fe">Quad9</button>
-        <button type="button" class="btn btn-preset" data-ipv4="208.67.222.222" data-ipv6="2620:119:35::35">OpenDNS</button>
-      </div>
-      
-      <!-- TODO: Add section for public IP display configuration -->
-      <!-- <h2>Public IP Display</h2>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" id="show-public-ip">
-          Show public IP in popup
-        </label>
-      </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" id="context-menu-ip">
-          Add public IP to context menu
-        </label>
-      </div> -->
-      
-      <div class="actions">
-        <button type="submit" class="btn btn-primary">Save Settings</button>
-        <button type="button" id="reset-defaults" class="btn btn-secondary">Reset to Defaults</button>
+      <!-- Actions -->
+      <div class="options-actions">
+        <button type="button" id="reset-defaults" class="btn-link">Reset to Defaults</button>
+        <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
-    
-    <div id="save-status" class="save-status"></div>
   </div>
   
   <script src="options.js"></script>

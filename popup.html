@@ -35,17 +35,29 @@
       </div>
     </div>
     
-    <!-- TODO: Add public IP display section -->
-    <!-- <div class="public-ip-section">
-      <div class="public-ip">
-        <span class="label">Public IPv4:</span>
-        <span class="value" id="public-ipv4">Detecting...</span>
+    <div class="ip-section">
+      <h2>Local IP</h2>
+      <div class="ip-row">
+        <span class="ip-label">IPv4:</span>
+        <span class="ip-value copyable" id="local-ipv4" title="Click to copy">-</span>
       </div>
-      <div class="public-ip">
-        <span class="label">Public IPv6:</span>
-        <span class="value" id="public-ipv6">Detecting...</span>
+      <div class="ip-row">
+        <span class="ip-label">IPv6:</span>
+        <span class="ip-value copyable" id="local-ipv6" title="Click to copy">-</span>
       </div>
-    </div> -->
+    </div>
+    
+    <div class="ip-section">
+      <h2>Public IP</h2>
+      <div class="ip-row">
+        <span class="ip-label">IPv4:</span>
+        <span class="ip-value copyable" id="public-ipv4" title="Click to copy">-</span>
+      </div>
+      <div class="ip-row">
+        <span class="ip-label">IPv6:</span>
+        <span class="ip-value copyable" id="public-ipv6" title="Click to copy">-</span>
+      </div>
+    </div>
     
     <div class="last-check" id="last-check">Last check: -</div>
     

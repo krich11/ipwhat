@@ -156,6 +156,69 @@ h2 {
   font-weight: 500;
 }
 
+/* IP Section */
+.ip-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.ip-section h2 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 8px 0;
+  padding: 0;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.ip-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.ip-value {
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 11px;
+  color: #333;
+  background: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ip-value.copyable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ip-value.copyable:hover {
+  background: #e3f2fd;
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.ip-value.copied {
+  background: #e8f5e9;
+  border-color: #4CAF50;
+  color: #2e7d32;
+}
+
 /* Last Check */
 .last-check {
   font-size: 11px;

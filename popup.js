@@ -13,6 +13,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   document.getElementById('check-now').addEventListener('click', checkNow);
   document.getElementById('open-settings').addEventListener('click', openSettings);
+  
+  // Add click-to-copy for IP addresses
+  document.querySelectorAll('.copyable').forEach(el => {
+    el.addEventListener('click', async () => {
+      const text = el.textContent;
+      if (text && text !== '-' && text !== 'Not detected') {
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = el.textContent;
+          el.textContent = 'Copied!';
+          el.classList.add('copied');
+          setTimeout(() => {
+            el.textContent = original;
+            el.classList.remove('copied');
+          }, 1000);
+        } catch (err) {
+          console.error('Copy failed:', err);
+        }
+      }
+    });
+  });
 });
 
 async function loadSettings() {
@@ -22,10 +43,19 @@ async function loadSettings() {
 }
 
 async function loadStatus() {
-  const status = await chrome.storage.local.get(['lastCheck', 'ipv4Status', 'ipv6Status']);
+  const status = await chrome.storage.local.get([
+    'lastCheck', 'ipv4Status', 'ipv6Status',
+    'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6'
+  ]);
   
   updateStatusCard('ipv4', status.ipv4Status);
   updateStatusCard('ipv6', status.ipv6Status);
+  
+  // Update IP addresses
+  document.getElementById('local-ipv4').textContent = status.localIPv4 || 'Not detected';
+  document.getElementById('local-ipv6').textContent = status.localIPv6 || 'Not detected';
+  document.getElementById('public-ipv4').textContent = status.publicIPv4 || 'Not detected';
+  document.getElementById('public-ipv6').textContent = status.publicIPv6 || 'Not detected';
   
   if (status.lastCheck) {
     const lastCheck = new Date(status.lastCheck);

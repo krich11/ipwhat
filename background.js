@@ -35,13 +35,25 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function performConnectivityCheck() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   
-  const ipv4Status = await checkConnectivity(settings.ipv4Target, 'ipv4', settings.timeout);
-  const ipv6Status = await checkConnectivity(settings.ipv6Target, 'ipv6', settings.timeout);
+  // Check connectivity and get public IPs in parallel
+  const [ipv4Status, ipv6Status, publicIPv4, publicIPv6] = await Promise.all([
+    checkConnectivity(settings.ipv4Target, 'ipv4', settings.timeout),
+    checkConnectivity(settings.ipv6Target, 'ipv6', settings.timeout),
+    getPublicIP('ipv4', settings.timeout),
+    getPublicIP('ipv6', settings.timeout)
+  ]);
+  
+  // Get local IPs via WebRTC
+  const localIPs = await getLocalIPs();
   
   await chrome.storage.local.set({
     lastCheck: Date.now(),
     ipv4Status,
-    ipv6Status
+    ipv6Status,
+    publicIPv4,
+    publicIPv6,
+    localIPv4: localIPs.ipv4,
+    localIPv6: localIPs.ipv6
   });
   
   updateBadge(ipv4Status, ipv6Status);
@@ -169,6 +181,109 @@ async function updateIcon(ipv4Connected, ipv6Connected) {
   chrome.action.setIcon({ imageData });
 }
 
+// Get public IP address using external services
+async function getPublicIP(type, timeout) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    // Use Cloudflare's trace endpoint - forces specific IP version
+    let url;
+    if (type === 'ipv4') {
+      url = 'https://1.1.1.1/cdn-cgi/trace';
+    } else {
+      url = 'https://[2606:4700:4700::1111]/cdn-cgi/trace';
+    }
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) return null;
+    
+    const text = await response.text();
+    // Parse "ip=x.x.x.x" from response
+    const match = text.match(/ip=([^\n]+)/);
+    return match ? match[1] : null;
+  } catch (error) {
+    console.log(`[IP What] Failed to get public ${type}:`, error.message);
+    return null;
+  }
+}
+
+// Get local IP addresses using WebRTC
+async function getLocalIPs() {
+  const result = { ipv4: null, ipv6: null };
+  
+  try {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    
+    pc.createDataChannel('');
+    
+    const candidates = [];
+    
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        candidates.push(event.candidate.candidate);
+      }
+    };
+    
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    
+    // Wait for ICE gathering
+    await new Promise((resolve) => {
+      if (pc.iceGatheringState === 'complete') {
+        resolve();
+      } else {
+        const checkState = () => {
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', checkState);
+            resolve();
+          }
+        };
+        pc.addEventListener('icegatheringstatechange', checkState);
+        // Timeout after 3 seconds
+        setTimeout(resolve, 3000);
+      }
+    });
+    
+    pc.close();
+    
+    // Parse local IPs from candidates
+    for (const candidate of candidates) {
+      // Match IP addresses in candidate string
+      const ipv4Match = candidate.match(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/);
+      const ipv6Match = candidate.match(/([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7})/);
+      
+      if (ipv4Match && !result.ipv4) {
+        const ip = ipv4Match[1];
+        // Skip link-local and loopback
+        if (!ip.startsWith('127.') && !ip.startsWith('169.254.')) {
+          result.ipv4 = ip;
+        }
+      }
+      
+      if (ipv6Match && !result.ipv6) {
+        const ip = ipv6Match[1];
+        // Skip link-local (fe80::)
+        if (!ip.toLowerCase().startsWith('fe80')) {
+          result.ipv6 = ip;
+        }
+      }
+    }
+  } catch (error) {
+    console.log('[IP What] Failed to get local IPs:', error.message);
+  }
+  
+  return result;
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'checkNow') {
@@ -179,14 +294,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'getStatus') {
-    chrome.storage.local.get(['lastCheck', 'ipv4Status', 'ipv6Status']).then(sendResponse);
+    chrome.storage.local.get([
+      'lastCheck', 'ipv4Status', 'ipv6Status',
+      'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6'
+    ]).then(sendResponse);
+    return true;
+  }
+  
+  if (message.action === 'copyToClipboard') {
+    // Copy text to clipboard (requires offscreen document in MV3)
+    navigator.clipboard.writeText(message.text).then(() => {
+      sendResponse({ success: true });
+    }).catch((error) => {
+      sendResponse({ success: false, error: error.message });
+    });
     return true;
   }
 });
-
-// TODO: Identify public IPv4 and IPv6 addresses
-// - Use external services like api.ipify.org (IPv4) and api64.ipify.org (IPv6)
-// - Cache the results and update periodically
-// - Display in extension context menu along with settings
-// - Add context menu items showing current public IPs
-// - Allow copying IP addresses to clipboard from context menu

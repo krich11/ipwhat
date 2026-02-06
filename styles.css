@@ -707,6 +707,22 @@ h2 {
   margin-bottom: 4px;
 }
 
+.resolved-ip {
+  color: #888;
+  font-family: monospace;
+  font-size: 11px;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.resolved-ip:hover {
+  color: #4F46E5;
+}
+
+.resolved-ip.copyable {
+  cursor: pointer;
+}
+
 /* Public IP Section - TODO */
 .public-ip-section {
   background: #f0f4f8;

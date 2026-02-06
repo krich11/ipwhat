@@ -1,5 +1,12 @@
 // Background service worker for IP connectivity checks
 
+// Store resolved IPs from webRequest
+const resolvedIPs = {
+  ipv4: null,
+  ipv6: null,
+  dns: null
+};
+
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
 const DEFAULT_SETTINGS = {
@@ -9,6 +16,29 @@ const DEFAULT_SETTINGS = {
   timeout: 5000, // milliseconds
   dnsFqdn: 'www.google.com'
 };
+
+// Set up webRequest listener to capture resolved IPs
+// This captures the actual IP address Chrome connected to for each request
+chrome.webRequest.onCompleted.addListener(
+  (details) => {
+    if (details.ip) {
+      // Categorize by URL pattern
+      if (details.url.includes('api.ipify.org') || details.url.includes('checkip.amazonaws.com') || 
+          details.url.includes('icanhazip.com') || details.url.includes('ifconfig.me')) {
+        resolvedIPs.ipv4 = details.ip;
+        console.log('[IP What] Resolved IPv4 endpoint IP:', details.ip);
+      } else if (details.url.includes('v6.ident.me') || details.url.includes('ipv6.icanhazip.com') ||
+                 details.url.includes('[2001:4860:4860::8888]')) {
+        resolvedIPs.ipv6 = details.ip;
+        console.log('[IP What] Resolved IPv6 endpoint IP:', details.ip);
+      } else if (details.url.includes('www.google.com')) {
+        resolvedIPs.dns = details.ip;
+        console.log('[IP What] Resolved DNS test IP:', details.ip);
+      }
+    }
+  },
+  { urls: ['<all_urls>'] }
+);
 
 // Initialize default settings on install
 chrome.runtime.onInstalled.addListener(async () => {
@@ -64,7 +94,8 @@ async function performConnectivityCheck() {
     publicIPv6,
     localIPv4: localIPs.ipv4,
     localIPv6: localIPs.ipv6,
-    dnsResults
+    dnsResults,
+    resolvedIPs: { ...resolvedIPs }
   });
   
   // Store history entry

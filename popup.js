@@ -80,7 +80,7 @@ async function loadSettings() {
 async function loadStatus() {
   const status = await chrome.storage.local.get([
     'lastCheck', 'ipv4Status', 'ipv6Status',
-    'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6', 'dnsResults'
+    'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6', 'dnsResults', 'resolvedIPs'
   ]);
   
   updateStatusCard('ipv4', status.ipv4Status);
@@ -97,7 +97,12 @@ async function loadStatus() {
   
   // Update DNS resolution results
   if (status.dnsResults) {
-    updateDnsResults(status.dnsResults);
+    updateDnsResults(status.dnsResults, status.resolvedIPs);
+  }
+  
+  // Update resolved IPs
+  if (status.resolvedIPs) {
+    updateResolvedIPs(status.resolvedIPs);
   }
   
   if (status.lastCheck) {
@@ -142,6 +147,67 @@ async function checkNow() {
   } finally {
     button.disabled = false;
     button.textContent = 'Check Now';
+  }
+}
+
+function updateResolvedIPs(resolvedIPs) {
+  const ipv4Resolved = document.getElementById('ipv4-resolved');
+  const ipv6Resolved = document.getElementById('ipv6-resolved');
+  const dnsResolved = document.getElementById('dns-resolved');
+  
+  if (resolvedIPs.ipv4) {
+    ipv4Resolved.textContent = `→ ${resolvedIPs.ipv4}`;
+    ipv4Resolved.dataset.ip = resolvedIPs.ipv4;
+    ipv4Resolved.classList.add('copyable');
+    ipv4Resolved.title = 'Resolved IP - Click to copy';
+    addCopyListener(ipv4Resolved);
+  } else {
+    ipv4Resolved.textContent = '';
+  }
+  
+  if (resolvedIPs.ipv6) {
+    ipv6Resolved.textContent = `→ ${resolvedIPs.ipv6}`;
+    ipv6Resolved.dataset.ip = resolvedIPs.ipv6;
+    ipv6Resolved.classList.add('copyable');
+    ipv6Resolved.title = 'Resolved IP - Click to copy';
+    addCopyListener(ipv6Resolved);
+  } else {
+    ipv6Resolved.textContent = '';
+  }
+  
+  if (resolvedIPs.dns) {
+    dnsResolved.textContent = `→ ${resolvedIPs.dns}`;
+    dnsResolved.dataset.ip = resolvedIPs.dns;
+    dnsResolved.classList.add('copyable');
+    dnsResolved.title = 'Resolved IP - Click to copy';
+    addCopyListener(dnsResolved);
+  } else {
+    dnsResolved.textContent = '';
+  }
+}
+
+function addCopyListener(el) {
+  // Remove existing listener to prevent duplicates
+  el.removeEventListener('click', handleCopy);
+  el.addEventListener('click', handleCopy);
+}
+
+async function handleCopy(e) {
+  const el = e.target;
+  const ip = el.dataset.ip;
+  if (ip) {
+    try {
+      await navigator.clipboard.writeText(ip);
+      const original = el.textContent;
+      el.textContent = 'Copied!';
+      el.classList.add('copied');
+      setTimeout(() => {
+        el.textContent = original;
+        el.classList.remove('copied');
+      }, 1000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
   }
 }
 

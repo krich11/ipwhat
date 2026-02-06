@@ -108,47 +108,24 @@ async function loadStatus() {
 
 function updateStatusCard(type, status) {
   const indicator = document.getElementById(`${type}-indicator`);
-  const ratingEl = document.getElementById(`${type}-rating`);
   const card = document.getElementById(`${type}-card`);
   
   if (!status) {
     indicator.className = 'status-indicator unknown';
     indicator.textContent = '?';
-    ratingEl.textContent = 'Not checked';
-    ratingEl.className = 'rating';
     return;
   }
   
   if (status.connected) {
     indicator.className = 'status-indicator connected';
     indicator.textContent = '✓';
-    
-    // Rating based on response time
-    const rating = getRating(status.latency);
-    ratingEl.textContent = rating.label;
-    ratingEl.className = `rating ${rating.class}`;
-    
     card.classList.remove('disconnected');
     card.classList.add('connected');
   } else {
     indicator.className = 'status-indicator disconnected';
     indicator.textContent = '✗';
-    ratingEl.textContent = status.error || 'Disconnected';
-    ratingEl.className = 'rating poor';
     card.classList.remove('connected');
     card.classList.add('disconnected');
-  }
-}
-
-function getRating(latency) {
-  if (latency < 300) {
-    return { label: '★ Excellent', class: 'excellent' };
-  } else if (latency < 500) {
-    return { label: '★ Good', class: 'good' };
-  } else if (latency < 1000) {
-    return { label: '★ Fair', class: 'fair' };
-  } else {
-    return { label: '★ Poor', class: 'poor' };
   }
 }
 
@@ -173,31 +150,21 @@ function updateDnsResults(dnsResults) {
   document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
   const resultEl = document.getElementById('dns-result');
-  const ratingEl = document.getElementById('dns-rating');
   
   if (!dnsResults.systemDns) {
     resultEl.textContent = '-';
     resultEl.className = 'dns-test-result';
-    ratingEl.textContent = '';
-    ratingEl.className = 'dns-rating rating';
     return;
   }
   
   const result = dnsResults.systemDns;
   
   if (result.success) {
-    resultEl.textContent = '✓';
+    resultEl.textContent = '✓ OK';
     resultEl.className = 'dns-test-result success';
-    
-    // Show rating based on response time
-    const rating = getRating(result.latency);
-    ratingEl.textContent = rating.label;
-    ratingEl.className = `dns-rating rating ${rating.class}`;
   } else {
     resultEl.textContent = '✗ ' + (result.error || 'Failed');
     resultEl.className = 'dns-test-result error';
-    ratingEl.textContent = '';
-    ratingEl.className = 'dns-rating rating';
   }
 }
 

@@ -703,27 +703,6 @@ h2 {
   margin-bottom: 4px;
 }
 
-.rating {
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.rating.excellent {
-  color: #4CAF50;
-}
-
-.rating.good {
-  color: #8BC34A;
-}
-
-.rating.fair {
-  color: #FF9800;
-}
-
-.rating.poor {
-  color: #F44336;
-}
-
 /* Public IP Section - TODO */
 .public-ip-section {
   background: #f0f4f8;

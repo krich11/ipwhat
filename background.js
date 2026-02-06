@@ -7,6 +7,9 @@ const resolvedIPs = {
   dns: null
 };
 
+// Track current DNS FQDN for matching
+let currentDnsFqdn = 'www.google.com';
+
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
 const DEFAULT_SETTINGS = {
@@ -31,7 +34,7 @@ chrome.webRequest.onCompleted.addListener(
                  details.url.includes('[2001:4860:4860::8888]')) {
         resolvedIPs.ipv6 = details.ip;
         console.log('[IP What] Resolved IPv6 endpoint IP:', details.ip);
-      } else if (details.url.includes('www.google.com')) {
+      } else if (currentDnsFqdn && details.url.includes(currentDnsFqdn)) {
         resolvedIPs.dns = details.ip;
         console.log('[IP What] Resolved DNS test IP:', details.ip);
       }
@@ -66,6 +69,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function performConnectivityCheck() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   
+  // Update the DNS FQDN for webRequest matching
+  currentDnsFqdn = settings.dnsFqdn;
+  
   // Get previous status for change detection
   const prevStatus = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
   
@@ -77,6 +83,9 @@ async function performConnectivityCheck() {
     getPublicIP('ipv6', settings.timeout),
     performDnsChecks(settings.dnsFqdn, settings.dohServer, settings.timeout)
   ]);
+  
+  // Small delay to ensure webRequest callbacks have fired
+  await new Promise(resolve => setTimeout(resolve, 50));
   
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();

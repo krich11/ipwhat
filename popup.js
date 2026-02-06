@@ -33,8 +33,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Load data when switching to specific tabs
       if (tabId === 'history') {
         loadHistory();
-      } else if (tabId === 'info') {
-        loadInfo();
+      } else if (tabId === 'about') {
+        loadAbout();
       }
     });
   });
@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // History tab buttons
   document.getElementById('export-csv').addEventListener('click', exportCSV);
   document.getElementById('clear-history').addEventListener('click', clearHistory);
+  
+  // About tab links
+  document.getElementById('open-settings-about').addEventListener('click', (e) => {
+    e.preventDefault();
+    openSettings();
+  });
   
   // Add click-to-copy for IP addresses
   document.querySelectorAll('.copyable').forEach(el => {
@@ -94,9 +100,47 @@ async function loadStatus() {
     updateDnsResults(status.dnsResults);
   }
   
+  // Update IP preference
+  updateIpPreference(status.ipv4Status, status.ipv6Status);
+  
   if (status.lastCheck) {
     const lastCheck = new Date(status.lastCheck);
     document.getElementById('last-check').textContent = `Last check: ${formatTime(lastCheck)}`;
+  }
+}
+
+function updateIpPreference(ipv4Status, ipv6Status) {
+  const prefEl = document.getElementById('ip-preference');
+  
+  const ipv4Ok = ipv4Status?.connected;
+  const ipv6Ok = ipv6Status?.connected;
+  const ipv4Latency = ipv4Status?.latency;
+  const ipv6Latency = ipv6Status?.latency;
+  
+  if (!ipv4Ok && !ipv6Ok) {
+    prefEl.textContent = 'No connection';
+    prefEl.className = 'pref-value none';
+  } else if (ipv4Ok && !ipv6Ok) {
+    prefEl.textContent = 'IPv4 only';
+    prefEl.className = 'pref-value ipv4';
+  } else if (!ipv4Ok && ipv6Ok) {
+    prefEl.textContent = 'IPv6 only';
+    prefEl.className = 'pref-value ipv6';
+  } else if (ipv4Latency && ipv6Latency) {
+    const diff = Math.abs(ipv4Latency - ipv6Latency);
+    if (ipv6Latency < ipv4Latency) {
+      prefEl.textContent = `IPv6 (${diff}ms faster)`;
+      prefEl.className = 'pref-value ipv6';
+    } else if (ipv4Latency < ipv6Latency) {
+      prefEl.textContent = `IPv4 (${diff}ms faster)`;
+      prefEl.className = 'pref-value ipv4';
+    } else {
+      prefEl.textContent = 'Equal';
+      prefEl.className = 'pref-value equal';
+    }
+  } else {
+    prefEl.textContent = 'Both available';
+    prefEl.className = 'pref-value equal';
   }
 }
 
@@ -519,28 +563,15 @@ async function clearHistory() {
   }
 }
 
-// Info tab functions
-async function loadInfo() {
-  // Get Network Information API data if available
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  
-  if (connection) {
-    document.getElementById('connection-type').textContent = connection.type || '-';
-    document.getElementById('effective-type').textContent = connection.effectiveType || '-';
-    document.getElementById('downlink').textContent = connection.downlink ? `${connection.downlink} Mbps` : '-';
-    document.getElementById('rtt').textContent = connection.rtt ? `${connection.rtt}ms` : '-';
-  } else {
-    document.getElementById('connection-type').textContent = 'N/A';
-    document.getElementById('effective-type').textContent = 'N/A';
-    document.getElementById('downlink').textContent = 'N/A';
-    document.getElementById('rtt').textContent = 'N/A';
-  }
-  
+// About tab functions
+async function loadAbout() {
   // Get extension version from manifest
   const manifest = chrome.runtime.getManifest();
-  document.getElementById('extension-version').textContent = manifest.version;
+  document.getElementById('extension-version').textContent = `v${manifest.version}`;
   
-  // Get check interval from settings
+  // Get settings
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-  document.getElementById('check-interval').textContent = `${settings.checkInterval}s`;
+  document.getElementById('about-check-interval').textContent = `${settings.checkInterval}s`;
+  document.getElementById('about-ipv4-target').textContent = settings.ipv4Target;
+  document.getElementById('about-ipv6-target').textContent = settings.ipv6Target;
 }

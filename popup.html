@@ -26,13 +26,9 @@
         <span class="tab-icon">📈</span>
         <span class="tab-label">History</span>
       </button>
-      <button class="tab" data-tab="tools">
-        <span class="tab-icon">🔧</span>
-        <span class="tab-label">Tools</span>
-      </button>
-      <button class="tab" data-tab="info">
+      <button class="tab" data-tab="about">
         <span class="tab-icon">ℹ️</span>
-        <span class="tab-label">Info</span>
+        <span class="tab-label">About</span>
       </button>
     </div>
     
@@ -95,6 +91,11 @@
           <span class="dns-test-latency" id="dns-latency"></span>
         </div>
         <p class="dns-help">If IPv4/IPv6 work but DNS fails → local DNS is broken</p>
+      </div>
+      
+      <div class="ip-preference">
+        <span class="pref-label">Preferred:</span>
+        <span class="pref-value" id="ip-preference">-</span>
       </div>
       
       <div class="footer">
@@ -190,67 +191,41 @@
       </div>
     </div>
     
-    <!-- Tools Tab Content -->
-    <div class="tab-content" id="tab-tools">
-      <div class="tools-section">
-        <h2>Network Tools</h2>
-        <p class="section-hint">Coming soon: ping, traceroute, port check, and more.</p>
-        <div class="tools-placeholder">
-          <div class="tool-item disabled">
-            <span class="tool-icon">🏓</span>
-            <span class="tool-name">Ping Test</span>
-          </div>
-          <div class="tool-item disabled">
-            <span class="tool-icon">🛤️</span>
-            <span class="tool-name">Traceroute</span>
-          </div>
-          <div class="tool-item disabled">
-            <span class="tool-icon">🚪</span>
-            <span class="tool-name">Port Check</span>
-          </div>
-          <div class="tool-item disabled">
-            <span class="tool-icon">🔍</span>
-            <span class="tool-name">DNS Lookup</span>
+    <!-- About Tab Content -->
+    <div class="tab-content" id="tab-about">
+      <div class="about-section">
+        <div class="about-header">
+          <span class="about-icon">🌐</span>
+          <div class="about-title">
+            <h2>IP What</h2>
+            <span class="about-version" id="extension-version">-</span>
           </div>
         </div>
+        <p class="about-desc">A simple tool to check your IPv4 and IPv6 connectivity status, with history tracking and notifications.</p>
       </div>
-    </div>
-    
-    <!-- Info Tab Content -->
-    <div class="tab-content" id="tab-info">
-      <div class="info-section">
-        <h2>Network Details</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Connection Type</span>
-            <span class="info-value" id="connection-type">-</span>
+      
+      <div class="about-section">
+        <h3>Settings</h3>
+        <div class="about-info">
+          <div class="about-row">
+            <span class="about-label">Check Interval</span>
+            <span class="about-value" id="about-check-interval">-</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Effective Type</span>
-            <span class="info-value" id="effective-type">-</span>
+          <div class="about-row">
+            <span class="about-label">IPv4 Target</span>
+            <span class="about-value" id="about-ipv4-target">-</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Downlink</span>
-            <span class="info-value" id="downlink">-</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">RTT</span>
-            <span class="info-value" id="rtt">-</span>
+          <div class="about-row">
+            <span class="about-label">IPv6 Target</span>
+            <span class="about-value" id="about-ipv6-target">-</span>
           </div>
         </div>
       </div>
       
-      <div class="info-section">
-        <h2>About</h2>
-        <div class="about-info">
-          <div class="about-row">
-            <span class="about-label">Version</span>
-            <span class="about-value" id="extension-version">-</span>
-          </div>
-          <div class="about-row">
-            <span class="about-label">Check Interval</span>
-            <span class="about-value" id="check-interval">-</span>
-          </div>
+      <div class="about-section">
+        <h3>Links</h3>
+        <div class="about-links">
+          <a href="#" id="open-settings-about" class="about-link">⚙️ Open Settings</a>
         </div>
       </div>
     </div>

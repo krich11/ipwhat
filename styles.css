@@ -499,6 +499,106 @@ body {
   color: #333;
 }
 
+/* IP Preference */
+.ip-preference {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.pref-label {
+  color: #666;
+}
+
+.pref-value {
+  font-weight: 600;
+}
+
+.pref-value.ipv6 {
+  color: #4CAF50;
+}
+
+.pref-value.ipv4 {
+  color: #1a73e8;
+}
+
+.pref-value.equal {
+  color: #666;
+}
+
+.pref-value.none {
+  color: #F44336;
+}
+
+/* About Tab */
+.about-section {
+  margin-bottom: 16px;
+}
+
+.about-section h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.about-icon {
+  font-size: 36px;
+}
+
+.about-title h2 {
+  font-size: 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.about-version {
+  font-size: 12px;
+  color: #666;
+}
+
+.about-desc {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
 .options-container {
   width: 100%;
   max-width: 600px;

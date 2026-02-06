@@ -655,6 +655,10 @@ h2 {
   background: #ffebee;
 }
 
+.status-card.full-width {
+  margin-bottom: 10px;
+}
+
 .status-header {
   display: flex;
   justify-content: space-between;

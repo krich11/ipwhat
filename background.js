@@ -7,8 +7,8 @@ const resolvedIPs = {
   dns: null
 };
 
-// Track current DNS FQDN for matching
-let currentDnsFqdn = 'www.google.com';
+// Track pending DNS check URL for precise matching
+let pendingDnsCheckUrl = null;
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -24,26 +24,16 @@ const DEFAULT_SETTINGS = {
 // This captures the actual IP address Chrome connected to for each request
 chrome.webRequest.onCompleted.addListener(
   (details) => {
-    if (details.ip && details.initiator === `chrome-extension://${chrome.runtime.id}`) {
-      // Only process requests from our extension
+    if (details.ip && details.tabId === -1) {
+      // Only process background requests (tabId = -1)
       const url = details.url;
-      console.log('[IP What] webRequest completed:', url, '-> IP:', details.ip);
+      console.log('[IP What] webRequest completed:', url, '-> IP:', details.ip, 'tabId:', details.tabId);
       
-      // Categorize by URL pattern - use startsWith for precise matching
-      if (url.startsWith('https://api.ipify.org') || 
-          url.startsWith('https://checkip.amazonaws.com') || 
-          url.startsWith('https://icanhazip.com') || 
-          url.startsWith('https://ifconfig.me')) {
-        resolvedIPs.ipv4 = details.ip;
-        console.log('[IP What] Resolved IPv4 endpoint IP:', details.ip);
-      } else if (url.startsWith('https://v6.ident.me') || 
-                 url.startsWith('https://ipv6.icanhazip.com') ||
-                 url.includes('[2001:4860:4860::8888]')) {
-        resolvedIPs.ipv6 = details.ip;
-        console.log('[IP What] Resolved IPv6 endpoint IP:', details.ip);
-      } else if (currentDnsFqdn && url.startsWith(`https://${currentDnsFqdn}`)) {
+      // Match DNS check by exact URL (includes our nonce)
+      if (pendingDnsCheckUrl && url === pendingDnsCheckUrl) {
         resolvedIPs.dns = details.ip;
-        console.log('[IP What] Resolved DNS test IP:', details.ip);
+        console.log('[IP What] Matched DNS check, resolved IP:', details.ip);
+        pendingDnsCheckUrl = null; // Clear after matching
       }
     }
   },
@@ -76,9 +66,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function performConnectivityCheck() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   
-  // Update the DNS FQDN for webRequest matching
-  currentDnsFqdn = settings.dnsFqdn;
-  
   // Get previous status for change detection
   const prevStatus = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
   
@@ -92,7 +79,7 @@ async function performConnectivityCheck() {
   ]);
   
   // Small delay to ensure webRequest callbacks have fired
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();
@@ -334,8 +321,12 @@ async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
   try {
-    // Fetch the hostname via HTTPS - this tests DNS resolution
-    const url = `https://${fqdn}/`;
+    // Use a unique nonce so webRequest can match this exact request
+    const nonce = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
+    const url = `https://${fqdn}/?_ipwhat=${nonce}`;
+    
+    // Register this URL for webRequest matching BEFORE fetch
+    pendingDnsCheckUrl = url;
     
     console.log(`[IP What] Testing system DNS: ${url}`);
     

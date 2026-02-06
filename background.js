@@ -7,8 +7,8 @@ const resolvedIPs = {
   dns: null
 };
 
-// Track pending DNS check URL for precise matching
-let pendingDnsCheckUrl = null;
+// Track pending DNS check nonce for matching (survives redirects)
+let pendingDnsNonce = null;
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -27,13 +27,12 @@ chrome.webRequest.onCompleted.addListener(
     if (details.ip && details.tabId === -1) {
       // Only process background requests (tabId = -1)
       const url = details.url;
-      console.log('[IP What] webRequest completed:', url, '-> IP:', details.ip, 'tabId:', details.tabId);
       
-      // Match DNS check by exact URL (includes our nonce)
-      if (pendingDnsCheckUrl && url === pendingDnsCheckUrl) {
+      // Match DNS check by nonce in query string (survives redirects)
+      if (pendingDnsNonce && url.includes(`_ipwhat=${pendingDnsNonce}`)) {
         resolvedIPs.dns = details.ip;
-        console.log('[IP What] Matched DNS check, resolved IP:', details.ip);
-        pendingDnsCheckUrl = null; // Clear after matching
+        console.log('[IP What] Matched DNS check, resolved IP:', details.ip, 'url:', url);
+        pendingDnsNonce = null; // Clear after matching
       }
     }
   },
@@ -321,12 +320,12 @@ async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
   try {
-    // Use a unique nonce so webRequest can match this exact request
+    // Use a unique nonce so webRequest can match this request (survives redirects)
     const nonce = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
     const url = `https://${fqdn}/?_ipwhat=${nonce}`;
     
-    // Register this URL for webRequest matching BEFORE fetch
-    pendingDnsCheckUrl = url;
+    // Register nonce for webRequest matching BEFORE fetch
+    pendingDnsNonce = nonce;
     
     console.log(`[IP What] Testing system DNS: ${url}`);
     

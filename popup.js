@@ -80,7 +80,7 @@ async function loadSettings() {
 async function loadStatus() {
   const status = await chrome.storage.local.get([
     'lastCheck', 'ipv4Status', 'ipv6Status',
-    'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6', 'dnsResults', 'resolvedIPs'
+    'publicIPv4', 'publicIPv6', 'localIPv4', 'localIPv6', 'dnsResults', 'dnsResolvedIP'
   ]);
   
   updateStatusCard('ipv4', status.ipv4Status);
@@ -97,12 +97,7 @@ async function loadStatus() {
   
   // Update DNS resolution results
   if (status.dnsResults) {
-    updateDnsResults(status.dnsResults, status.resolvedIPs);
-  }
-  
-  // Update resolved IPs
-  if (status.resolvedIPs) {
-    updateResolvedIPs(status.resolvedIPs);
+    updateDnsResults(status.dnsResults, status.dnsResolvedIP);
   }
   
   if (status.lastCheck) {
@@ -150,20 +145,6 @@ async function checkNow() {
   }
 }
 
-function updateResolvedIPs(resolvedIPs) {
-  const dnsResolved = document.getElementById('dns-resolved');
-  
-  if (resolvedIPs.dns) {
-    dnsResolved.textContent = `→ ${resolvedIPs.dns}`;
-    dnsResolved.dataset.ip = resolvedIPs.dns;
-    dnsResolved.classList.add('copyable');
-    dnsResolved.title = 'Resolved IP - Click to copy';
-    addCopyListener(dnsResolved);
-  } else {
-    dnsResolved.textContent = '';
-  }
-}
-
 function addCopyListener(el) {
   // Remove existing listener to prevent duplicates
   el.removeEventListener('click', handleCopy);
@@ -189,12 +170,24 @@ async function handleCopy(e) {
   }
 }
 
-function updateDnsResults(dnsResults) {
+function updateDnsResults(dnsResults, dnsResolvedIP) {
   // Display the FQDN being tested
   document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
   const indicator = document.getElementById('dns-indicator');
   const card = document.getElementById('dns-card');
+  const dnsResolved = document.getElementById('dns-resolved');
+  
+  // Update resolved IP display
+  if (dnsResolvedIP) {
+    dnsResolved.textContent = `→ ${dnsResolvedIP}`;
+    dnsResolved.dataset.ip = dnsResolvedIP;
+    dnsResolved.classList.add('copyable');
+    dnsResolved.title = 'Resolved IP - Click to copy';
+    addCopyListener(dnsResolved);
+  } else {
+    dnsResolved.textContent = '';
+  }
   
   if (!dnsResults.systemDns) {
     indicator.className = 'status-indicator unknown';

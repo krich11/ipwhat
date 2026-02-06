@@ -1,15 +1,7 @@
 // Background service worker for IP connectivity checks
 
-// Store resolved IPs from webRequest
-const resolvedIPs = {
-  ipv4: null,
-  ipv6: null,
-  dns: null
-};
-
-// Track pending DNS check for matching
-let pendingDnsFqdn = null;
-let pendingDnsTime = 0;
+// Store resolved IPs from webRequest - simple Map of URL hostname -> IP
+const recentResolvedIPs = new Map();
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -21,29 +13,15 @@ const DEFAULT_SETTINGS = {
   dnsFqdn: 'www.google.com'
 };
 
-// Set up webRequest listener to capture resolved IPs
-// This captures the actual IP address Chrome connected to for each request
+// Set up webRequest listener - just store all resolved IPs by hostname
 chrome.webRequest.onCompleted.addListener(
   (details) => {
-    if (details.ip && details.tabId === -1) {
-      // Only process background requests (tabId = -1)
-      const url = details.url;
-      
-      // Match DNS check by hostname within time window (5 seconds)
-      if (pendingDnsFqdn && (Date.now() - pendingDnsTime) < 5000) {
-        try {
-          const urlObj = new URL(url);
-          // Match if the hostname contains our FQDN (handles www.hpe.com -> hpe.com redirects)
-          const fqdnBase = pendingDnsFqdn.replace(/^www\./, '');
-          if (urlObj.hostname.includes(fqdnBase)) {
-            resolvedIPs.dns = details.ip;
-            console.log('[IP What] Matched DNS check, resolved IP:', details.ip, 'url:', url);
-            pendingDnsFqdn = null; // Clear after matching
-          }
-        } catch (e) {
-          console.log('[IP What] URL parse error:', e);
-        }
-      }
+    if (details.ip) {
+      try {
+        const hostname = new URL(details.url).hostname;
+        recentResolvedIPs.set(hostname, details.ip);
+        console.log('[IP What] Stored resolved IP:', hostname, '->', details.ip);
+      } catch (e) {}
     }
   },
   { urls: ['<all_urls>'] }
@@ -87,9 +65,6 @@ async function performConnectivityCheck() {
     performDnsChecks(settings.dnsFqdn, settings.dohServer, settings.timeout)
   ]);
   
-  // Small delay to ensure webRequest callbacks have fired
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();
   
@@ -97,6 +72,9 @@ async function performConnectivityCheck() {
   console.log('[IP What] DNS results:', dnsResults);
   
   const now = Date.now();
+  
+  // Get resolved IP from DNS results
+  const dnsResolvedIP = dnsResults?.systemDns?.resolvedIP || null;
   
   await chrome.storage.local.set({
     lastCheck: now,
@@ -107,7 +85,7 @@ async function performConnectivityCheck() {
     localIPv4: localIPs.ipv4,
     localIPv6: localIPs.ipv6,
     dnsResults,
-    resolvedIPs: { ...resolvedIPs }
+    dnsResolvedIP
   });
   
   // Store history entry
@@ -334,10 +312,6 @@ async function testSystemDns(fqdn, timeout) {
     const nonce = Date.now();
     const url = `https://${fqdn}/?_=${nonce}`;
     
-    // Register FQDN and time for webRequest matching BEFORE fetch
-    pendingDnsFqdn = fqdn;
-    pendingDnsTime = Date.now();
-    
     console.log(`[IP What] Testing system DNS: ${url}`);
     
     const controller = new AbortController();
@@ -352,11 +326,31 @@ async function testSystemDns(fqdn, timeout) {
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    console.log(`[IP What] System DNS success in ${latency}ms`);
+    // Small delay for webRequest callback to fire
+    await new Promise(r => setTimeout(r, 50));
+    
+    // Look up resolved IP from our Map - try exact match first, then without www
+    let resolvedIP = recentResolvedIPs.get(fqdn);
+    if (!resolvedIP) {
+      resolvedIP = recentResolvedIPs.get(fqdn.replace(/^www\./, ''));
+    }
+    if (!resolvedIP) {
+      // Try to find any hostname that ends with our base domain
+      const baseDomain = fqdn.replace(/^www\./, '');
+      for (const [hostname, ip] of recentResolvedIPs) {
+        if (hostname.endsWith(baseDomain)) {
+          resolvedIP = ip;
+          break;
+        }
+      }
+    }
+    
+    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, resolvedIP);
     
     return {
       success: true,
-      latency
+      latency,
+      resolvedIP
     };
   } catch (error) {
     const latency = Date.now() - startTime;

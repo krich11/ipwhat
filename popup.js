@@ -141,11 +141,11 @@ function updateStatusCard(type, status) {
 }
 
 function getRating(latency) {
-  if (latency < 150) {
+  if (latency < 300) {
     return { label: '★ Excellent', class: 'excellent' };
-  } else if (latency < 300) {
-    return { label: '★ Good', class: 'good' };
   } else if (latency < 500) {
+    return { label: '★ Good', class: 'good' };
+  } else if (latency < 1000) {
     return { label: '★ Fair', class: 'fair' };
   } else {
     return { label: '★ Poor', class: 'poor' };

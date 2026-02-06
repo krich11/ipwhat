@@ -7,8 +7,9 @@ const resolvedIPs = {
   dns: null
 };
 
-// Track pending DNS check nonce for matching (survives redirects)
-let pendingDnsNonce = null;
+// Track pending DNS check for matching
+let pendingDnsFqdn = null;
+let pendingDnsTime = 0;
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -28,11 +29,20 @@ chrome.webRequest.onCompleted.addListener(
       // Only process background requests (tabId = -1)
       const url = details.url;
       
-      // Match DNS check by nonce in query string (survives redirects)
-      if (pendingDnsNonce && url.includes(`_ipwhat=${pendingDnsNonce}`)) {
-        resolvedIPs.dns = details.ip;
-        console.log('[IP What] Matched DNS check, resolved IP:', details.ip, 'url:', url);
-        pendingDnsNonce = null; // Clear after matching
+      // Match DNS check by hostname within time window (5 seconds)
+      if (pendingDnsFqdn && (Date.now() - pendingDnsTime) < 5000) {
+        try {
+          const urlObj = new URL(url);
+          // Match if the hostname contains our FQDN (handles www.hpe.com -> hpe.com redirects)
+          const fqdnBase = pendingDnsFqdn.replace(/^www\./, '');
+          if (urlObj.hostname.includes(fqdnBase)) {
+            resolvedIPs.dns = details.ip;
+            console.log('[IP What] Matched DNS check, resolved IP:', details.ip, 'url:', url);
+            pendingDnsFqdn = null; // Clear after matching
+          }
+        } catch (e) {
+          console.log('[IP What] URL parse error:', e);
+        }
       }
     }
   },
@@ -320,12 +330,13 @@ async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
   try {
-    // Use a unique nonce so webRequest can match this request (survives redirects)
-    const nonce = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
-    const url = `https://${fqdn}/?_ipwhat=${nonce}`;
+    // Use a cache-busting nonce
+    const nonce = Date.now();
+    const url = `https://${fqdn}/?_=${nonce}`;
     
-    // Register nonce for webRequest matching BEFORE fetch
-    pendingDnsNonce = nonce;
+    // Register FQDN and time for webRequest matching BEFORE fetch
+    pendingDnsFqdn = fqdn;
+    pendingDnsTime = Date.now();
     
     console.log(`[IP What] Testing system DNS: ${url}`);
     

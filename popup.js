@@ -151,29 +151,7 @@ async function checkNow() {
 }
 
 function updateResolvedIPs(resolvedIPs) {
-  const ipv4Resolved = document.getElementById('ipv4-resolved');
-  const ipv6Resolved = document.getElementById('ipv6-resolved');
   const dnsResolved = document.getElementById('dns-resolved');
-  
-  if (resolvedIPs.ipv4) {
-    ipv4Resolved.textContent = `→ ${resolvedIPs.ipv4}`;
-    ipv4Resolved.dataset.ip = resolvedIPs.ipv4;
-    ipv4Resolved.classList.add('copyable');
-    ipv4Resolved.title = 'Resolved IP - Click to copy';
-    addCopyListener(ipv4Resolved);
-  } else {
-    ipv4Resolved.textContent = '';
-  }
-  
-  if (resolvedIPs.ipv6) {
-    ipv6Resolved.textContent = `→ ${resolvedIPs.ipv6}`;
-    ipv6Resolved.dataset.ip = resolvedIPs.ipv6;
-    ipv6Resolved.classList.add('copyable');
-    ipv6Resolved.title = 'Resolved IP - Click to copy';
-    addCopyListener(ipv6Resolved);
-  } else {
-    ipv6Resolved.textContent = '';
-  }
   
   if (resolvedIPs.dns) {
     dnsResolved.textContent = `→ ${resolvedIPs.dns}`;

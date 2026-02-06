@@ -100,47 +100,9 @@ async function loadStatus() {
     updateDnsResults(status.dnsResults);
   }
   
-  // Update IP preference
-  updateIpPreference(status.ipv4Status, status.ipv6Status);
-  
   if (status.lastCheck) {
     const lastCheck = new Date(status.lastCheck);
     document.getElementById('last-check').textContent = `Last check: ${formatTime(lastCheck)}`;
-  }
-}
-
-function updateIpPreference(ipv4Status, ipv6Status) {
-  const prefEl = document.getElementById('ip-preference');
-  
-  const ipv4Ok = ipv4Status?.connected;
-  const ipv6Ok = ipv6Status?.connected;
-  const ipv4Latency = ipv4Status?.latency;
-  const ipv6Latency = ipv6Status?.latency;
-  
-  if (!ipv4Ok && !ipv6Ok) {
-    prefEl.textContent = 'No connection';
-    prefEl.className = 'pref-value none';
-  } else if (ipv4Ok && !ipv6Ok) {
-    prefEl.textContent = 'IPv4 only';
-    prefEl.className = 'pref-value ipv4';
-  } else if (!ipv4Ok && ipv6Ok) {
-    prefEl.textContent = 'IPv6 only';
-    prefEl.className = 'pref-value ipv6';
-  } else if (ipv4Latency && ipv6Latency) {
-    const diff = Math.abs(ipv4Latency - ipv6Latency);
-    if (ipv6Latency < ipv4Latency) {
-      prefEl.textContent = `IPv6 (${diff}ms faster)`;
-      prefEl.className = 'pref-value ipv6';
-    } else if (ipv4Latency < ipv6Latency) {
-      prefEl.textContent = `IPv4 (${diff}ms faster)`;
-      prefEl.className = 'pref-value ipv4';
-    } else {
-      prefEl.textContent = 'Equal';
-      prefEl.className = 'pref-value equal';
-    }
-  } else {
-    prefEl.textContent = 'Both available';
-    prefEl.className = 'pref-value equal';
   }
 }
 

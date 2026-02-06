@@ -54,6 +54,16 @@
             <div class="target" id="ipv6-target">-</div>
           </div>
         </div>
+        
+        <div class="status-card" id="dns-card">
+          <div class="status-header">
+            <span class="protocol">DNS Resolution</span>
+            <span class="status-indicator" id="dns-indicator"></span>
+          </div>
+          <div class="status-details">
+            <div class="target" id="dns-fqdn-display">-</div>
+          </div>
+        </div>
       </div>
       
       <div class="ip-section">
@@ -78,16 +88,6 @@
           <span class="ip-label">IPv6:</span>
           <span class="ip-value copyable" id="public-ipv6" title="Click to copy">-</span>
         </div>
-      </div>
-      
-      <div class="ip-section dns-section">
-        <h2>DNS Resolution</h2>
-        <div class="dns-status-row">
-          <span class="dns-test-label">System DNS:</span>
-          <span class="dns-test-fqdn" id="dns-fqdn-display">-</span>
-          <span class="dns-test-result" id="dns-result">-</span>
-        </div>
-        <p class="dns-help">If IPv4/IPv6 work but DNS fails → local DNS is broken</p>
       </div>
       
       <div class="footer">

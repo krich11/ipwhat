@@ -149,22 +149,27 @@ function updateDnsResults(dnsResults) {
   // Display the FQDN being tested
   document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
-  const resultEl = document.getElementById('dns-result');
+  const indicator = document.getElementById('dns-indicator');
+  const card = document.getElementById('dns-card');
   
   if (!dnsResults.systemDns) {
-    resultEl.textContent = '-';
-    resultEl.className = 'dns-test-result';
+    indicator.className = 'status-indicator unknown';
+    indicator.textContent = '?';
     return;
   }
   
   const result = dnsResults.systemDns;
   
   if (result.success) {
-    resultEl.textContent = '✓ OK';
-    resultEl.className = 'dns-test-result success';
+    indicator.className = 'status-indicator connected';
+    indicator.textContent = '✓';
+    card.classList.remove('disconnected');
+    card.classList.add('connected');
   } else {
-    resultEl.textContent = '✗ ' + (result.error || 'Failed');
-    resultEl.className = 'dns-test-result error';
+    indicator.className = 'status-indicator disconnected';
+    indicator.textContent = '✗';
+    card.classList.remove('connected');
+    card.classList.add('disconnected');
   }
 }
 

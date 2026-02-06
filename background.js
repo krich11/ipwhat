@@ -1,7 +1,8 @@
 // Background service worker for IP connectivity checks
 
-// Store resolved IPs from webRequest - simple Map of URL hostname -> IP
-const recentResolvedIPs = new Map();
+// Track pending DNS request by requestId
+let pendingDnsRequestId = null;
+let dnsResolvedIP = null;
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -13,15 +14,24 @@ const DEFAULT_SETTINGS = {
   dnsFqdn: 'www.google.com'
 };
 
-// Set up webRequest listener - just store all resolved IPs by hostname
+// Capture requestId when our DNS check request starts
+chrome.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    if (details.url.includes('_ipwhat=')) {
+      pendingDnsRequestId = details.requestId;
+      console.log('[IP What] Captured DNS requestId:', details.requestId);
+    }
+  },
+  { urls: ['<all_urls>'] }
+);
+
+// Match by requestId in onCompleted to get the resolved IP
 chrome.webRequest.onCompleted.addListener(
   (details) => {
-    if (details.ip) {
-      try {
-        const hostname = new URL(details.url).hostname;
-        recentResolvedIPs.set(hostname, details.ip);
-        console.log('[IP What] Stored resolved IP:', hostname, '->', details.ip);
-      } catch (e) {}
+    if (details.ip && details.requestId === pendingDnsRequestId) {
+      dnsResolvedIP = details.ip;
+      console.log('[IP What] DNS resolved IP:', details.ip, 'for requestId:', details.requestId);
+      pendingDnsRequestId = null;
     }
   },
   { urls: ['<all_urls>'] }
@@ -307,10 +317,13 @@ async function performDnsChecks(fqdn, dohServer, timeout) {
 async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
+  // Reset resolved IP before starting
+  dnsResolvedIP = null;
+  
   try {
-    // Use a cache-busting nonce
-    const nonce = Date.now();
-    const url = `https://${fqdn}/?_=${nonce}`;
+    // Use a unique nonce - onBeforeRequest will capture the requestId
+    const nonce = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+    const url = `https://${fqdn}/?_ipwhat=${nonce}`;
     
     console.log(`[IP What] Testing system DNS: ${url}`);
     
@@ -326,31 +339,15 @@ async function testSystemDns(fqdn, timeout) {
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    // Small delay for webRequest callback to fire
+    // Small delay for webRequest onCompleted callback to fire
     await new Promise(r => setTimeout(r, 50));
     
-    // Look up resolved IP from our Map - try exact match first, then without www
-    let resolvedIP = recentResolvedIPs.get(fqdn);
-    if (!resolvedIP) {
-      resolvedIP = recentResolvedIPs.get(fqdn.replace(/^www\./, ''));
-    }
-    if (!resolvedIP) {
-      // Try to find any hostname that ends with our base domain
-      const baseDomain = fqdn.replace(/^www\./, '');
-      for (const [hostname, ip] of recentResolvedIPs) {
-        if (hostname.endsWith(baseDomain)) {
-          resolvedIP = ip;
-          break;
-        }
-      }
-    }
-    
-    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, resolvedIP);
+    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, dnsResolvedIP);
     
     return {
       success: true,
       latency,
-      resolvedIP
+      resolvedIP: dnsResolvedIP
     };
   } catch (error) {
     const latency = Date.now() - startTime;

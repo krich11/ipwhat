@@ -154,12 +154,10 @@ function updateDnsResults(dnsResults) {
   document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
   const resultEl = document.getElementById('dns-result');
-  const latencyEl = document.getElementById('dns-latency');
   
   if (!dnsResults.systemDns) {
     resultEl.textContent = '-';
     resultEl.className = 'dns-test-result';
-    latencyEl.textContent = '';
     return;
   }
   
@@ -172,8 +170,6 @@ function updateDnsResults(dnsResults) {
     resultEl.textContent = '✗ ' + (result.error || 'Failed');
     resultEl.className = 'dns-test-result error';
   }
-  
-  latencyEl.textContent = result.latency ? `${result.latency}ms` : '';
 }
 
 function openSettings() {

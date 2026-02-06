@@ -173,21 +173,31 @@ function updateDnsResults(dnsResults) {
   document.getElementById('dns-fqdn-display').textContent = dnsResults.fqdn;
   
   const resultEl = document.getElementById('dns-result');
+  const ratingEl = document.getElementById('dns-rating');
   
   if (!dnsResults.systemDns) {
     resultEl.textContent = '-';
     resultEl.className = 'dns-test-result';
+    ratingEl.textContent = '';
+    ratingEl.className = 'dns-rating rating';
     return;
   }
   
   const result = dnsResults.systemDns;
   
   if (result.success) {
-    resultEl.textContent = '✓ OK';
+    resultEl.textContent = '✓';
     resultEl.className = 'dns-test-result success';
+    
+    // Show rating based on response time
+    const rating = getRating(result.latency);
+    ratingEl.textContent = rating.label;
+    ratingEl.className = `dns-rating rating ${rating.class}`;
   } else {
     resultEl.textContent = '✗ ' + (result.error || 'Failed');
     resultEl.className = 'dns-test-result error';
+    ratingEl.textContent = '';
+    ratingEl.className = 'dns-rating rating';
   }
 }
 

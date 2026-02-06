@@ -108,28 +108,47 @@ async function loadStatus() {
 
 function updateStatusCard(type, status) {
   const indicator = document.getElementById(`${type}-indicator`);
-  const latencyEl = document.getElementById(`${type}-latency`);
+  const ratingEl = document.getElementById(`${type}-rating`);
   const card = document.getElementById(`${type}-card`);
   
   if (!status) {
     indicator.className = 'status-indicator unknown';
     indicator.textContent = '?';
-    latencyEl.textContent = 'Not checked';
+    ratingEl.textContent = 'Not checked';
+    ratingEl.className = 'rating';
     return;
   }
   
   if (status.connected) {
     indicator.className = 'status-indicator connected';
     indicator.textContent = '✓';
-    latencyEl.textContent = `${status.latency}ms`;
+    
+    // Rating based on response time
+    const rating = getRating(status.latency);
+    ratingEl.textContent = rating.label;
+    ratingEl.className = `rating ${rating.class}`;
+    
     card.classList.remove('disconnected');
     card.classList.add('connected');
   } else {
     indicator.className = 'status-indicator disconnected';
     indicator.textContent = '✗';
-    latencyEl.textContent = status.error || 'Disconnected';
+    ratingEl.textContent = status.error || 'Disconnected';
+    ratingEl.className = 'rating poor';
     card.classList.remove('connected');
     card.classList.add('disconnected');
+  }
+}
+
+function getRating(latency) {
+  if (latency < 150) {
+    return { label: '★ Excellent', class: 'excellent' };
+  } else if (latency < 300) {
+    return { label: '★ Good', class: 'good' };
+  } else if (latency < 500) {
+    return { label: '★ Fair', class: 'fair' };
+  } else {
+    return { label: '★ Poor', class: 'poor' };
   }
 }
 

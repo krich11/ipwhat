@@ -30,9 +30,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       document.getElementById(`tab-${tabId}`).classList.add('active');
       
-      // Load history when switching to history tab
+      // Load data when switching to specific tabs
       if (tabId === 'history') {
         loadHistory();
+      } else if (tabId === 'info') {
+        loadInfo();
       }
     });
   });
@@ -426,6 +428,8 @@ function updateCurrentMetricValues(history) {
   // Get the most recent entry with jitter/loss data
   const recent = history.slice(-1)[0];
   
+  console.log('[IP What] Recent history entry:', recent);
+  
   if (recent) {
     const ipv4Jitter = recent.ipv4Jitter;
     const ipv6Jitter = recent.ipv6Jitter;
@@ -433,13 +437,13 @@ function updateCurrentMetricValues(history) {
     const ipv6Loss = recent.ipv6PacketLoss;
     
     document.getElementById('ipv4-jitter-value').textContent = 
-      ipv4Jitter !== null ? `${ipv4Jitter}ms` : '-';
+      (ipv4Jitter !== null && ipv4Jitter !== undefined) ? `${ipv4Jitter}ms` : '-';
     document.getElementById('ipv6-jitter-value').textContent = 
-      ipv6Jitter !== null ? `${ipv6Jitter}ms` : '-';
+      (ipv6Jitter !== null && ipv6Jitter !== undefined) ? `${ipv6Jitter}ms` : '-';
     document.getElementById('ipv4-loss-value').textContent = 
-      ipv4Loss !== null ? `${ipv4Loss}%` : '-';
+      (ipv4Loss !== null && ipv4Loss !== undefined) ? `${ipv4Loss}%` : '-';
     document.getElementById('ipv6-loss-value').textContent = 
-      ipv6Loss !== null ? `${ipv6Loss}%` : '-';
+      (ipv6Loss !== null && ipv6Loss !== undefined) ? `${ipv6Loss}%` : '-';
   }
 }
 
@@ -513,4 +517,30 @@ async function clearHistory() {
     await chrome.runtime.sendMessage({ action: 'clearHistory' });
     loadHistory();
   }
+}
+
+// Info tab functions
+async function loadInfo() {
+  // Get Network Information API data if available
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  
+  if (connection) {
+    document.getElementById('connection-type').textContent = connection.type || '-';
+    document.getElementById('effective-type').textContent = connection.effectiveType || '-';
+    document.getElementById('downlink').textContent = connection.downlink ? `${connection.downlink} Mbps` : '-';
+    document.getElementById('rtt').textContent = connection.rtt ? `${connection.rtt}ms` : '-';
+  } else {
+    document.getElementById('connection-type').textContent = 'N/A';
+    document.getElementById('effective-type').textContent = 'N/A';
+    document.getElementById('downlink').textContent = 'N/A';
+    document.getElementById('rtt').textContent = 'N/A';
+  }
+  
+  // Get extension version from manifest
+  const manifest = chrome.runtime.getManifest();
+  document.getElementById('extension-version').textContent = manifest.version;
+  
+  // Get check interval from settings
+  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+  document.getElementById('check-interval').textContent = `${settings.checkInterval}s`;
 }

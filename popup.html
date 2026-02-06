@@ -18,8 +18,22 @@
     
     <!-- Tab Navigation -->
     <div class="tabs">
-      <button class="tab active" data-tab="status">Status</button>
-      <button class="tab" data-tab="history">History</button>
+      <button class="tab active" data-tab="status">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Status</span>
+      </button>
+      <button class="tab" data-tab="history">
+        <span class="tab-icon">📈</span>
+        <span class="tab-label">History</span>
+      </button>
+      <button class="tab" data-tab="tools">
+        <span class="tab-icon">🔧</span>
+        <span class="tab-label">Tools</span>
+      </button>
+      <button class="tab" data-tab="info">
+        <span class="tab-icon">ℹ️</span>
+        <span class="tab-label">Info</span>
+      </button>
     </div>
     
     <!-- Status Tab Content -->
@@ -173,6 +187,71 @@
       <div class="history-actions">
         <button id="export-csv" class="btn btn-secondary">Export CSV</button>
         <button id="clear-history" class="btn-link">Clear History</button>
+      </div>
+    </div>
+    
+    <!-- Tools Tab Content -->
+    <div class="tab-content" id="tab-tools">
+      <div class="tools-section">
+        <h2>Network Tools</h2>
+        <p class="section-hint">Coming soon: ping, traceroute, port check, and more.</p>
+        <div class="tools-placeholder">
+          <div class="tool-item disabled">
+            <span class="tool-icon">🏓</span>
+            <span class="tool-name">Ping Test</span>
+          </div>
+          <div class="tool-item disabled">
+            <span class="tool-icon">🛤️</span>
+            <span class="tool-name">Traceroute</span>
+          </div>
+          <div class="tool-item disabled">
+            <span class="tool-icon">🚪</span>
+            <span class="tool-name">Port Check</span>
+          </div>
+          <div class="tool-item disabled">
+            <span class="tool-icon">🔍</span>
+            <span class="tool-name">DNS Lookup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Info Tab Content -->
+    <div class="tab-content" id="tab-info">
+      <div class="info-section">
+        <h2>Network Details</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Connection Type</span>
+            <span class="info-value" id="connection-type">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Effective Type</span>
+            <span class="info-value" id="effective-type">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Downlink</span>
+            <span class="info-value" id="downlink">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">RTT</span>
+            <span class="info-value" id="rtt">-</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-section">
+        <h2>About</h2>
+        <div class="about-info">
+          <div class="about-row">
+            <span class="about-label">Version</span>
+            <span class="about-value" id="extension-version">-</span>
+          </div>
+          <div class="about-row">
+            <span class="about-label">Check Interval</span>
+            <span class="about-value" id="check-interval">-</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -95,8 +95,8 @@ async function loadStatus() {
   document.getElementById('local-ipv4').textContent = localIPs.ipv4 || 'Not detected';
   document.getElementById('local-ipv6').textContent = localIPs.ipv6 || 'Not detected';
   
-  // Update DNS resolution results
-  if (status.dnsResults) {
+  // Update DNS resolution results (if card exists)
+  if (status.dnsResults && document.getElementById('dns-card')) {
     updateDnsResults(status.dnsResults, status.dnsResolvedIP);
   }
   
@@ -178,9 +178,9 @@ function updateDnsResults(dnsResults, dnsResolvedIP) {
   const card = document.getElementById('dns-card');
   const dnsResolved = document.getElementById('dns-resolved');
   
-  // Update resolved IP display
+  // Update resolved IP display (on same line as hostname)
   if (dnsResolvedIP) {
-    dnsResolved.textContent = `→ ${dnsResolvedIP}`;
+    dnsResolved.textContent = ` → ${dnsResolvedIP}`;
     dnsResolved.dataset.ip = dnsResolvedIP;
     dnsResolved.classList.add('copyable');
     dnsResolved.title = 'Resolved IP - Click to copy';

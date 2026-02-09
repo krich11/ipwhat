@@ -1,8 +1,8 @@
 // Background service worker for IP connectivity checks
 
-// Track pending DNS request by requestId
+// Track pending DNS request - use a Promise to wait for onCompleted
+let pendingDnsResolve = null;
 let pendingDnsRequestId = null;
-let dnsResolvedIP = null;
 
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
@@ -28,9 +28,27 @@ chrome.webRequest.onBeforeRequest.addListener(
 // Match by requestId in onCompleted to get the resolved IP
 chrome.webRequest.onCompleted.addListener(
   (details) => {
-    if (details.ip && details.requestId === pendingDnsRequestId) {
-      dnsResolvedIP = details.ip;
-      console.log('[IP What] DNS resolved IP:', details.ip, 'for requestId:', details.requestId);
+    if (details.requestId === pendingDnsRequestId) {
+      console.log('[IP What] onCompleted for DNS request, IP:', details.ip, 'URL:', details.url);
+      if (pendingDnsResolve) {
+        pendingDnsResolve(details.ip);
+        pendingDnsResolve = null;
+      }
+      pendingDnsRequestId = null;
+    }
+  },
+  { urls: ['<all_urls>'] }
+);
+
+// Also handle errors
+chrome.webRequest.onErrorOccurred.addListener(
+  (details) => {
+    if (details.requestId === pendingDnsRequestId) {
+      console.log('[IP What] onErrorOccurred for DNS request:', details.error);
+      if (pendingDnsResolve) {
+        pendingDnsResolve(null);
+        pendingDnsResolve = null;
+      }
       pendingDnsRequestId = null;
     }
   },
@@ -317,8 +335,11 @@ async function performDnsChecks(fqdn, dohServer, timeout) {
 async function testSystemDns(fqdn, timeout) {
   const startTime = Date.now();
   
-  // Reset resolved IP before starting
-  dnsResolvedIP = null;
+  // Create a Promise that onCompleted/onErrorOccurred will resolve
+  let resolvedIP = null;
+  const resolvedIPPromise = new Promise(resolve => {
+    pendingDnsResolve = resolve;
+  });
   
   try {
     // Use a unique nonce - onBeforeRequest will capture the requestId
@@ -339,15 +360,16 @@ async function testSystemDns(fqdn, timeout) {
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    // Small delay for webRequest onCompleted callback to fire
-    await new Promise(r => setTimeout(r, 50));
+    // Wait for onCompleted to fire (with a timeout to avoid hanging)
+    const ipTimeout = new Promise(resolve => setTimeout(() => resolve(null), 500));
+    resolvedIP = await Promise.race([resolvedIPPromise, ipTimeout]);
     
-    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, dnsResolvedIP);
+    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, resolvedIP);
     
     return {
       success: true,
       latency,
-      resolvedIP: dnsResolvedIP
+      resolvedIP: resolvedIP
     };
   } catch (error) {
     const latency = Date.now() - startTime;

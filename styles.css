@@ -707,11 +707,20 @@ h2 {
   margin-bottom: 4px;
 }
 
+.dns-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.dns-line .target {
+  margin-bottom: 0;
+}
+
 .resolved-ip {
   color: #888;
   font-family: monospace;
   font-size: 11px;
-  word-break: break-all;
   cursor: pointer;
 }
 

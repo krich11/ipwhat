@@ -44,14 +44,17 @@ Click "Settings" in the popup or right-click the extension icon and select "Opti
 
 ### Status View
 ![Status View](screenshots/ss1.png)
+
 Main popup showing IPv4/IPv6 connectivity status, local and public IP addresses.
 
 ### History View
 ![History View](screenshots/ss2.png)
+
 Connectivity history with timestamps and export options.
 
 ### Settings
 ![Settings](screenshots/ss3.png)
+
 Configuration options for target addresses, timeouts, and preset DNS providers.
 
 ## TODO

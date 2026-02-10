@@ -22,8 +22,9 @@
 
 The extension makes the following network requests:
 
-1. **Connectivity checks** to configured IP addresses (default: 8.8.8.8 and 2001:4860:4860::8888) to test IPv4/IPv6 reachability
-2. **Public IP detection** via ipify.org API to display your public IP address
+1. **IPv4 connectivity check** via api.ipify.org
+2. **IPv6 connectivity check** via v6.ident.me
+3. **Public IP detection** via multiple services (checkip.amazonaws.com, icanhazip.com, ifconfig.me, ipv6.icanhazip.com)
 
 These requests are solely for functionality and no tracking or analytics data is collected.
 
@@ -37,8 +38,14 @@ You can clear this data at any time by removing the extension.
 
 ## Third-Party Services
 
-- **ipify.org** - Used to detect your public IP address. See their privacy policy at https://www.ipify.org/
-- **DNS servers** - Connectivity tests are made to DNS servers you configure (Google, Cloudflare, Quad9, or OpenDNS)
+The extension uses the following third-party services for connectivity and IP detection:
+
+- **api.ipify.org** - IPv4 connectivity test and public IP detection
+- **v6.ident.me** - IPv6 connectivity test
+- **checkip.amazonaws.com** - Backup public IPv4 detection
+- **icanhazip.com** - Backup public IP detection
+- **ifconfig.me** - Backup public IPv4 detection
+- **ipv6.icanhazip.com** - Public IPv6 detection
 
 ## Permissions
 
@@ -46,7 +53,7 @@ The extension requests the following permissions:
 
 - **storage:** To save your settings and history locally
 - **alarms:** To schedule periodic connectivity checks
-- **webRequest:** To detect connection details for diagnostics
+- **notifications:** To alert you to connectivity changes
 
 ## Changes to This Policy
 

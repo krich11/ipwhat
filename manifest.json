@@ -6,12 +6,15 @@
   "permissions": [
     "storage",
     "alarms",
-    "notifications",
-    "webRequest"
+    "notifications"
   ],
   "host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "https://api.ipify.org/*",
+    "https://checkip.amazonaws.com/*",
+    "https://icanhazip.com/*",
+    "https://ifconfig.me/*",
+    "https://v6.ident.me/*",
+    "https://ipv6.icanhazip.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

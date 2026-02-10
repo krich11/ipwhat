@@ -1,9 +1,5 @@
 // Background service worker for IP connectivity checks
 
-// Track pending DNS request - use a Promise to wait for onCompleted
-let pendingDnsResolve = null;
-let pendingDnsRequestId = null;
-
 // Default to Google DNS IPs - any IP with HTTPS port open will work
 // The connection attempt itself (even with cert errors) proves connectivity
 const DEFAULT_SETTINGS = {
@@ -13,47 +9,6 @@ const DEFAULT_SETTINGS = {
   timeout: 5000, // milliseconds
   dnsFqdn: 'www.google.com'
 };
-
-// Capture requestId when our DNS check request starts
-chrome.webRequest.onBeforeRequest.addListener(
-  (details) => {
-    if (details.url.includes('_ipwhat=')) {
-      pendingDnsRequestId = details.requestId;
-      console.log('[IP What] Captured DNS requestId:', details.requestId);
-    }
-  },
-  { urls: ['<all_urls>'] }
-);
-
-// Match by requestId in onCompleted to get the resolved IP
-chrome.webRequest.onCompleted.addListener(
-  (details) => {
-    if (details.requestId === pendingDnsRequestId) {
-      console.log('[IP What] onCompleted for DNS request, IP:', details.ip, 'URL:', details.url);
-      if (pendingDnsResolve) {
-        pendingDnsResolve(details.ip);
-        pendingDnsResolve = null;
-      }
-      pendingDnsRequestId = null;
-    }
-  },
-  { urls: ['<all_urls>'] }
-);
-
-// Also handle errors
-chrome.webRequest.onErrorOccurred.addListener(
-  (details) => {
-    if (details.requestId === pendingDnsRequestId) {
-      console.log('[IP What] onErrorOccurred for DNS request:', details.error);
-      if (pendingDnsResolve) {
-        pendingDnsResolve(null);
-        pendingDnsResolve = null;
-      }
-      pendingDnsRequestId = null;
-    }
-  },
-  { urls: ['<all_urls>'] }
-);
 
 // Initialize default settings on install
 chrome.runtime.onInstalled.addListener(async () => {
@@ -84,25 +39,20 @@ async function performConnectivityCheck() {
   // Get previous status for change detection
   const prevStatus = await chrome.storage.local.get(['ipv4Status', 'ipv6Status']);
   
-  // Check connectivity, get public IPs, and perform DNS checks in parallel
-  const [ipv4Status, ipv6Status, publicIPv4, publicIPv6, dnsResults] = await Promise.all([
+  // Check connectivity and get public IPs in parallel
+  const [ipv4Status, ipv6Status, publicIPv4, publicIPv6] = await Promise.all([
     checkConnectivity(settings.ipv4Target, 'ipv4', settings.timeout),
     checkConnectivity(settings.ipv6Target, 'ipv6', settings.timeout),
     getPublicIP('ipv4', settings.timeout),
-    getPublicIP('ipv6', settings.timeout),
-    performDnsChecks(settings.dnsFqdn, settings.dohServer, settings.timeout)
+    getPublicIP('ipv6', settings.timeout)
   ]);
   
   // Get local IPs via WebRTC
   const localIPs = await getLocalIPs();
   
   console.log('[IP What] Storing results - publicIPv4:', publicIPv4, 'publicIPv6:', publicIPv6);
-  console.log('[IP What] DNS results:', dnsResults);
   
   const now = Date.now();
-  
-  // Get resolved IP from DNS results
-  const dnsResolvedIP = dnsResults?.systemDns?.resolvedIP || null;
   
   await chrome.storage.local.set({
     lastCheck: now,
@@ -111,9 +61,7 @@ async function performConnectivityCheck() {
     publicIPv4,
     publicIPv6,
     localIPv4: localIPs.ipv4,
-    localIPv6: localIPs.ipv6,
-    dnsResults,
-    dnsResolvedIP
+    localIPv6: localIPs.ipv6
   });
   
   // Store history entry
@@ -138,9 +86,8 @@ async function checkConnectivity(target, type, timeout) {
       // ipify only has IPv4, guarantees IPv4 connectivity test
       url = 'https://api.ipify.org?format=text';
     } else {
-      // Test IPv6 with a direct IPv6 address
-      const formattedTarget = `[${target}]`;
-      url = `https://${formattedTarget}/`;
+      // v6.ident.me is IPv6-only, guarantees IPv6 connectivity test
+      url = 'https://v6.ident.me/';
     }
     
     console.log(`[IP What] Checking ${type}: ${url}`);
@@ -315,78 +262,6 @@ async function getLocalIPs() {
   // This won't work in service worker, so we return null and let popup handle it
   
   return result;
-}
-
-// Perform DNS resolution check - tests if system DNS can resolve the hostname
-async function performDnsChecks(fqdn, dohServer, timeout) {
-  const results = {
-    fqdn,
-    systemDns: null  // System DNS - can we resolve and reach the hostname?
-  };
-  
-  results.systemDns = await testSystemDns(fqdn, timeout);
-  
-  return results;
-}
-
-// Test system DNS by attempting to fetch a hostname-based URL
-// If this works, DNS resolution is functioning
-// If IPv4/IPv6 connectivity works (by IP) but this fails, DNS is broken
-async function testSystemDns(fqdn, timeout) {
-  const startTime = Date.now();
-  
-  // Create a Promise that onCompleted/onErrorOccurred will resolve
-  let resolvedIP = null;
-  const resolvedIPPromise = new Promise(resolve => {
-    pendingDnsResolve = resolve;
-  });
-  
-  try {
-    // Use a unique nonce - onBeforeRequest will capture the requestId
-    const nonce = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-    const url = `https://${fqdn}/?_ipwhat=${nonce}`;
-    
-    console.log(`[IP What] Testing system DNS: ${url}`);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    const response = await fetch(url, {
-      signal: controller.signal,
-      mode: 'no-cors',  // We don't care about the response, just that we connected
-      cache: 'no-store'
-    });
-    
-    clearTimeout(timeoutId);
-    const latency = Date.now() - startTime;
-    
-    // Wait for onCompleted to fire (with a timeout to avoid hanging)
-    const ipTimeout = new Promise(resolve => setTimeout(() => resolve(null), 500));
-    resolvedIP = await Promise.race([resolvedIPPromise, ipTimeout]);
-    
-    console.log(`[IP What] System DNS success in ${latency}ms, resolved IP:`, resolvedIP);
-    
-    return {
-      success: true,
-      latency,
-      resolvedIP: resolvedIP
-    };
-  } catch (error) {
-    const latency = Date.now() - startTime;
-    console.log(`[IP What] System DNS error:`, error.message);
-    
-    if (error.name === 'AbortError') {
-      return { success: false, error: 'Timeout', latency: timeout };
-    }
-    
-    // Check if it's a DNS failure vs connection failure
-    // DNS failures typically show as "net::ERR_NAME_NOT_RESOLVED"
-    if (error.message.includes('ERR_NAME_NOT_RESOLVED') || error.message.includes('getaddrinfo')) {
-      return { success: false, error: 'DNS failed', latency };
-    }
-    
-    return { success: false, error: error.message, latency };
-  }
 }
 
 // Listen for messages from popup

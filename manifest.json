@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "IP What - IPv4/IPv6 Connectivity Checker",
+  "name": "IP What? - IPv4/IPv6 Connectivity Checker",
   "version": "1.6.0",
   "description": "Check IPv4 and IPv6 connectivity with jitter, packet loss, and historical graphs",
   "permissions": [

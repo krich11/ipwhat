@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# IP What - Chrome Extension Installer
+# IP What? - Chrome Extension Installer
 # This script helps install the extension in Chrome/Chromium browsers
 
 set -e
@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTENSION_DIR="$SCRIPT_DIR"
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║           IP What - Chrome Extension Installer             ║"
+echo "║          IP What? - Chrome Extension Installer            ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -152,5 +152,5 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🎉 Thank you for using IP What!"
+echo "🎉 Thank you for using IP What?"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

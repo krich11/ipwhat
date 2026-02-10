@@ -1,4 +1,4 @@
-// Options page script for IP What extension
+// Options page script for IP What? extension
 
 const DEFAULT_SETTINGS = {
   ipv4Target: '8.8.8.8',

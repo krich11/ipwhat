@@ -1,14 +1,14 @@
-# Privacy Policy for IP What
+# Privacy Policy for IP What?
 
 **Last Updated:** February 9, 2026
 
 ## Overview
 
-IP What is a Chrome extension that monitors IPv4 and IPv6 internet connectivity. This privacy policy explains what data the extension accesses and how it is handled.
+**IP What?** is a Chrome extension that monitors IPv4 and IPv6 internet connectivity. This privacy policy explains what data the extension accesses and how it is handled.
 
 ## Data Collection
 
-**IP What does NOT collect, store, or transmit any personal data to external servers.**
+**IP What?** does NOT collect, store, or transmit any personal data to external servers.
 
 ### What the extension accesses locally:
 
@@ -59,5 +59,5 @@ https://github.com/krich11/ipwhat/issues
 
 ## Open Source
 
-IP What is open source software. You can review the complete source code at:
+**IP What?** is open source software. You can review the complete source code at:
 https://github.com/krich11/ipwhat

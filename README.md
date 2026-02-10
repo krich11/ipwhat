@@ -1,4 +1,4 @@
-# IP What - IPv4/IPv6 Connectivity Checker
+# IP What? - IPv4/IPv6 Connectivity Checker
 
 A Chrome extension that monitors IPv4 and IPv6 connectivity in real-time.
 
@@ -75,7 +75,7 @@ Configuration options for target addresses, timeouts, and preset DNS providers.
 
 ## Support
 
-If you find IP What useful, consider [buying me an energy drink](https://ko-fi.com/krich11)! ⚡🥤
+If you find **IP What?** useful, consider [buying me an energy drink](https://ko-fi.com/krich11)! ⚡🥤
 
 ## Development
 
@@ -88,7 +88,7 @@ The extension uses Chrome's Manifest V3 with:
 
 ## Privacy
 
-IP What does not collect, store, or transmit any personal data. All data stays in your browser's local storage. See [Privacy Policy](store/PRIVACY.md) for details.
+**IP What?** does not collect, store, or transmit any personal data. All data stays in your browser's local storage. See [Privacy Policy](store/PRIVACY.md) for details.
 
 ## License
 

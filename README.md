@@ -1,32 +1,48 @@
 # IP What - IPv4/IPv6 Connectivity Checker
 
-A Chrome extension that monitors IPv4 and IPv6 connectivity by checking DNS server reachability.
+A Chrome extension that monitors IPv4 and IPv6 connectivity in real-time.
 
 ## Features
 
 - ✅ Real-time IPv4 and IPv6 connectivity status
+- 🌐 Local and public IP address display
+- 📊 Connectivity history with jitter and packet loss metrics
+- 🌓 Automatic dark/light mode based on system preference
 - ⚙️ Configurable ping targets (default: Google DNS)
 - 🎨 Visual badge indicator for quick status checks
-- ⏱️ Latency measurement
+- ⏱️ Latency measurement with EMA-smoothed jitter
+- 📋 Click-to-copy IP addresses
+- 📈 Export history to CSV
 - 🔧 Preset targets for popular DNS providers
 
 ## Installation
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top-right corner)
-3. Click "Load unpacked"
-4. Select the `ipwhat` folder
+### From Chrome Web Store
+*(Coming soon)*
+
+### Manual Installation
+1. Download the latest release from [GitHub Releases](https://github.com/krich11/ipwhat/releases)
+2. Extract the zip file
+3. Open Chrome and navigate to `chrome://extensions/`
+4. Enable "Developer mode" (toggle in top-right corner)
+5. Click "Load unpacked"
+6. Select the extracted folder
 
 ## Usage
 
 - Click the extension icon to see current connectivity status
 - Green checkmark = Both IPv4 and IPv6 connected
-- Orange exclamation = Partial connectivity
+- Orange exclamation = Partial connectivity  
 - Red X = No connectivity
+
+### Tabs
+- **Status** - Current connectivity, IP addresses, and latency
+- **History** - 24-hour connectivity graph, jitter, packet loss, and event log
+- **About** - Version info, links, and support
 
 ### Settings
 
-Click "Settings" in the popup or right-click the extension icon and select "Options" to:
+Click the ⚙️ icon or right-click the extension icon and select "Options" to:
 - Change IPv4/IPv6 target addresses
 - Adjust timeout and check intervals
 - Use preset configurations (Google, Cloudflare, Quad9, OpenDNS)
@@ -50,20 +66,16 @@ Main popup showing IPv4/IPv6 connectivity status, local and public IP addresses.
 ### History View
 ![History View](screenshots/ss2.png)
 
-Connectivity history with timestamps and export options.
+Connectivity history with jitter, packet loss metrics, and event log.
 
 ### Settings
 ![Settings](screenshots/ss3.png)
 
 Configuration options for target addresses, timeouts, and preset DNS providers.
 
-## TODO
+## Support
 
-- [ ] Identify and display public IPv4 address
-- [ ] Identify and display public IPv6 address
-- [ ] Add context menu with IP addresses
-- [ ] Add copy-to-clipboard functionality for IPs
-- [ ] Add notification support for connectivity changes
+If you find IP What useful, consider [buying me an energy drink](https://ko-fi.com/krich11)! ⚡🥤
 
 ## Development
 
@@ -71,7 +83,13 @@ The extension uses Chrome's Manifest V3 with:
 - Service Worker for background connectivity checks
 - Storage API for settings persistence
 - Alarms API for periodic checks
+- WebRequest API for connection diagnostics
+- Automatic theme detection via `prefers-color-scheme`
+
+## Privacy
+
+IP What does not collect, store, or transmit any personal data. All data stays in your browser's local storage. See [Privacy Policy](store/PRIVACY.md) for details.
 
 ## License
 
-MIT
+MIT - See [LICENSE](LICENSE) for details.

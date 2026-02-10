@@ -18,5 +18,5 @@ build/
 
 # Dependencies (if using any build tools)
 node_modules/
-.github/
+.github/agents/
 *.zip

@@ -564,10 +564,4 @@ async function loadAbout() {
   // Get extension version from manifest
   const manifest = chrome.runtime.getManifest();
   document.getElementById('extension-version').textContent = `v${manifest.version}`;
-  
-  // Get settings
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-  document.getElementById('about-check-interval').textContent = `${settings.checkInterval}s`;
-  document.getElementById('about-ipv4-target').textContent = settings.ipv4Target;
-  document.getElementById('about-ipv6-target').textContent = settings.ipv6Target;
 }

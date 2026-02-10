@@ -555,7 +555,7 @@ async function checkAndNotify(prevStatus, ipv4Status, ipv6Status) {
     try {
       await chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icons/icon128.svg',
+        iconUrl: 'icons/icon128.png',
         title: isDown ? '⚠️ Connectivity Change' : '✓ Connectivity Restored',
         message: message,
         priority: isDown ? 2 : 1

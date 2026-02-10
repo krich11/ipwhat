@@ -97,3 +97,16 @@ The extension uses Chrome's Manifest V3 with:
 ## License
 
 MIT - See [LICENSE](LICENSE) for details.
+
+---
+
+## Roadmap: Firefox Support
+
+- [ ] Create Firefox-specific manifest (`manifests/firefox.manifest.json`)
+  - Add `browser_specific_settings.gecko.id`
+  - Use background scripts instead of service worker
+- [ ] Add [webextension-polyfill](https://github.com/nicotine-plus/nicotine-plus/issues/1234) for unified `browser.*` API
+- [ ] Replace `chrome.*` API calls with `browser.*` throughout codebase
+- [ ] Test background script lifecycle differences
+- [ ] Create build script to package Chrome and Firefox variants
+- [ ] Submit to [Firefox Add-ons](https://addons.mozilla.org/developers/)

@@ -28,6 +28,10 @@ A Chrome extension that monitors IPv4 and IPv6 connectivity in real-time.
 5. Click "Load unpacked"
 6. Select the extracted folder
 
+**Quick Install Scripts:**
+- **macOS/Linux:** Run `./install.sh` in the extracted folder
+- **Windows:** Right-click `install.ps1` → "Run with PowerShell"
+
 ## Usage
 
 - Click the extension icon to see current connectivity status

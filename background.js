@@ -429,24 +429,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Calculate jitter (variance in latency) from recent samples
-function calculateJitter(history, type, windowSize = 10) {
+// Store previous jitter values for EMA smoothing
+let previousJitter = { ipv4: null, ipv6: null };
+
+// Calculate jitter using EMA (exponential moving average) for smooth display
+// Uses instant jitter (difference between current and previous latency) smoothed over time
+function calculateJitter(history, type, alpha = 0.3) {
   const latencyKey = `${type}Latency`;
   const recentLatencies = history
-    .slice(-windowSize)
+    .slice(-10)
     .map(h => h[latencyKey])
     .filter(l => l !== null && l !== undefined);
   
   if (recentLatencies.length < 2) return null;
   
-  // Calculate mean
-  const mean = recentLatencies.reduce((a, b) => a + b, 0) / recentLatencies.length;
+  // Calculate instant jitter as average absolute difference between consecutive latencies
+  let totalDiff = 0;
+  for (let i = 1; i < recentLatencies.length; i++) {
+    totalDiff += Math.abs(recentLatencies[i] - recentLatencies[i - 1]);
+  }
+  const instantJitter = totalDiff / (recentLatencies.length - 1);
   
-  // Calculate variance
-  const variance = recentLatencies.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentLatencies.length;
+  // Apply EMA smoothing
+  const prevJitter = previousJitter[type];
+  let smoothedJitter;
   
-  // Jitter is standard deviation of latency
-  return Math.round(Math.sqrt(variance));
+  if (prevJitter === null) {
+    smoothedJitter = instantJitter;
+  } else {
+    // EMA: new = α * current + (1 - α) * previous
+    smoothedJitter = alpha * instantJitter + (1 - alpha) * prevJitter;
+  }
+  
+  previousJitter[type] = smoothedJitter;
+  return Math.round(smoothedJitter);
 }
 
 // Calculate packet loss percentage from recent samples

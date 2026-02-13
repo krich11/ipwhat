@@ -1,13 +1,13 @@
 // Background service worker for IP connectivity checks
 
-// Default to Google DNS IPs - any IP with HTTPS port open will work
-// The connection attempt itself (even with cert errors) proves connectivity
+// Default to Cloudflare DNS IPs - these serve HTTP on port 80
+// Direct IP connection proves connectivity without DNS resolution
 const DEFAULT_SETTINGS = {
-  ipv4Target: '8.8.8.8',
-  ipv6Target: '2001:4860:4860::8888',
+  ipv4Target: '1.1.1.1',
+  ipv6Target: '2606:4700:4700::1111',
   checkInterval: 30, // seconds
   timeout: 5000, // milliseconds
-  dnsFqdn: 'www.google.com'
+  dnsFqdn: 'www.cloudflare.com'
 };
 
 // Initialize default settings on install
@@ -74,21 +74,17 @@ async function performConnectivityCheck() {
 }
 
 // Check connectivity to a target IP address
-// Uses HTTPS fetch directly to the IP - no DNS resolution involved
-// Even if cert validation fails, the TCP connection proves IP connectivity
+// Uses HTTP fetch directly to the IP - no DNS resolution, no cert issues
+// TCP connection + HTTP response proves IP connectivity
 async function checkConnectivity(target, type, timeout) {
   const startTime = Date.now();
   
   try {
-    // Use reliable external services that force specific IP versions
-    let url;
-    if (type === 'ipv4') {
-      // ipify only has IPv4, guarantees IPv4 connectivity test
-      url = 'https://api.ipify.org?format=text';
-    } else {
-      // v6.ident.me is IPv6-only, guarantees IPv6 connectivity test
-      url = 'https://v6.ident.me/';
-    }
+    // Use HTTP (not HTTPS) to avoid cert validation issues with IP literals
+    // Format: http://1.1.1.1/ for IPv4, http://[2606:4700:4700::1111]/ for IPv6
+    const url = type === 'ipv4' 
+      ? `http://${target}/`
+      : `http://[${target}]/`;
     
     console.log(`[IP What] Checking ${type}: ${url}`);
     
@@ -97,16 +93,15 @@ async function checkConnectivity(target, type, timeout) {
     
     const response = await fetch(url, {
       signal: controller.signal,
-      mode: type === 'ipv4' ? 'cors' : 'no-cors',
       cache: 'no-store'
     });
     
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    console.log(`[IP What] ${type} success in ${latency}ms`);
+    // Any HTTP response (200, 301, 404, etc.) means TCP connected = connectivity works
+    console.log(`[IP What] ${type} success in ${latency}ms (HTTP ${response.status})`);
     
-    // Clean success - connected and got a response
     return {
       connected: true,
       latency,
@@ -129,8 +124,6 @@ async function checkConnectivity(target, type, timeout) {
     }
     
     // For any other error (TypeError/Failed to fetch), treat as no connectivity
-    // We can't reliably distinguish "connection refused" from "no route to host"
-    // in a browser context - both throw TypeError
     return {
       connected: false,
       latency,

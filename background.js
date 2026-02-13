@@ -91,16 +91,19 @@ async function checkConnectivity(target, type, timeout) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
     
+    // Use no-cors mode - we don't need to read the response,
+    // just confirm TCP connection succeeded (fetch resolves = connected)
     const response = await fetch(url, {
       signal: controller.signal,
-      cache: 'no-store'
+      cache: 'no-store',
+      mode: 'no-cors'
     });
     
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
     
-    // Any HTTP response (200, 301, 404, etc.) means TCP connected = connectivity works
-    console.log(`[IP What] ${type} success in ${latency}ms (HTTP ${response.status})`);
+    // With no-cors, response is opaque (status=0) but fetch resolving = TCP connected
+    console.log(`[IP What] ${type} success in ${latency}ms (connected)`);
     
     return {
       connected: true,

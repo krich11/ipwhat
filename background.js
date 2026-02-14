@@ -120,7 +120,7 @@ async function checkConnectivity(target, type, timeout) {
     if (error.name === 'AbortError') {
       return {
         connected: false,
-        latency: timeout,
+        latency: null,  // Don't store timeout as latency - it's not a real measurement
         lastChecked: Date.now(),
         error: 'Timeout'
       };
@@ -129,7 +129,7 @@ async function checkConnectivity(target, type, timeout) {
     // For any other error (TypeError/Failed to fetch), treat as no connectivity
     return {
       connected: false,
-      latency,
+      latency: null,  // Don't store failure time as latency
       lastChecked: Date.now(),
       error: 'Connection failed'
     };
@@ -300,40 +300,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Store previous jitter values for EMA smoothing
-let previousJitter = { ipv4: null, ipv6: null };
-
-// Calculate jitter using EMA (exponential moving average) for smooth display
-// Uses instant jitter (difference between current and previous latency) smoothed over time
-function calculateJitter(history, type, alpha = 0.3) {
+// Calculate jitter using trimmed standard deviation of latencies
+// Removes top/bottom 10% to eliminate outliers (spikes, artificially fast responses)
+// Only considers successful pings (excludes timeouts/failures)
+function calculateJitter(history, type) {
+  const connectedKey = type;  // 'ipv4' or 'ipv6' - boolean status
   const latencyKey = `${type}Latency`;
-  const recentLatencies = history
-    .slice(-10)
+  
+  // Only use latencies from successful connections
+  let latencies = history
+    .slice(-20)
+    .filter(h => h[connectedKey] === true)  // Only successful pings
     .map(h => h[latencyKey])
-    .filter(l => l !== null && l !== undefined);
+    .filter(l => l !== null && l !== undefined && l > 0);
   
-  if (recentLatencies.length < 2) return null;
+  if (latencies.length < 5) return null;  // Need enough samples for trimming
   
-  // Calculate instant jitter as average absolute difference between consecutive latencies
-  let totalDiff = 0;
-  for (let i = 1; i < recentLatencies.length; i++) {
-    totalDiff += Math.abs(recentLatencies[i] - recentLatencies[i - 1]);
-  }
-  const instantJitter = totalDiff / (recentLatencies.length - 1);
+  // Sort and trim top/bottom 10% (min 1 from each end)
+  latencies.sort((a, b) => a - b);
+  const trimCount = Math.max(1, Math.floor(latencies.length * 0.1));
+  const trimmedLatencies = latencies.slice(trimCount, -trimCount);
   
-  // Apply EMA smoothing
-  const prevJitter = previousJitter[type];
-  let smoothedJitter;
+  if (trimmedLatencies.length < 2) return null;
   
-  if (prevJitter === null) {
-    smoothedJitter = instantJitter;
-  } else {
-    // EMA: new = α * current + (1 - α) * previous
-    smoothedJitter = alpha * instantJitter + (1 - alpha) * prevJitter;
-  }
+  // Calculate standard deviation on trimmed data
+  const mean = trimmedLatencies.reduce((a, b) => a + b, 0) / trimmedLatencies.length;
+  const squaredDiffs = trimmedLatencies.map(l => Math.pow(l - mean, 2));
+  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / trimmedLatencies.length;
+  const stdDev = Math.sqrt(variance);
   
-  previousJitter[type] = smoothedJitter;
-  return Math.round(smoothedJitter);
+  return Math.round(stdDev);
 }
 
 // Calculate packet loss percentage from recent samples

@@ -5,7 +5,6 @@
 const DEFAULT_SETTINGS = {
   ipv4Target: '1.1.1.1',
   ipv6Target: '2606:4700:4700::1111',
-  checkInterval: 30, // seconds
   timeout: 5000, // milliseconds
   dnsFqdn: 'www.cloudflare.com'
 };
@@ -73,10 +72,28 @@ async function performConnectivityCheck() {
   updateBadge(ipv4Status, ipv6Status);
 }
 
-// Check connectivity to a target IP address
+// Check connectivity to a target IP address with retry
 // Uses HTTP fetch directly to the IP - no DNS resolution, no cert issues
-// TCP connection + HTTP response proves IP connectivity
+// Retries once after 500ms delay to avoid false negatives from transient failures
 async function checkConnectivity(target, type, timeout) {
+  // First attempt
+  let result = await checkConnectivityOnce(target, type, timeout);
+  
+  // If failed, retry once after 500ms delay
+  if (!result.connected) {
+    console.log(`[IP What] ${type} failed, retrying in 500ms...`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    result = await checkConnectivityOnce(target, type, timeout);
+    if (result.connected) {
+      console.log(`[IP What] ${type} succeeded on retry`);
+    }
+  }
+  
+  return result;
+}
+
+// Single connectivity check attempt
+async function checkConnectivityOnce(target, type, timeout) {
   const startTime = Date.now();
   
   try {
@@ -364,7 +381,7 @@ async function storeHistoryEntry(timestamp, ipv4Status, ipv6Status) {
   newEntry.ipv4PacketLoss = calculatePacketLoss(connectivityHistory, 'ipv4');
   newEntry.ipv6PacketLoss = calculatePacketLoss(connectivityHistory, 'ipv6');
   
-  // Keep only last 24 hours (assuming 30 second intervals = 2880 entries max)
+  // Keep only last 24 hours (1 minute intervals = 1440 entries max)
   const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
   const filteredHistory = connectivityHistory.filter(entry => entry.timestamp > oneDayAgo);
   

@@ -1,11 +1,10 @@
 // Options page script for IP What? extension
 
 const DEFAULT_SETTINGS = {
-  ipv4Target: '8.8.8.8',
-  ipv6Target: '2001:4860:4860::8888',
-  checkInterval: 30,
+  ipv4Target: '1.1.1.1',
+  ipv6Target: '2606:4700:4700::1111',
   timeout: 5000,
-  dnsFqdn: 'www.google.com'
+  dnsFqdn: 'www.cloudflare.com'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -36,7 +35,6 @@ async function loadSettings() {
   document.getElementById('ipv4-target').value = settings.ipv4Target;
   document.getElementById('ipv6-target').value = settings.ipv6Target;
   document.getElementById('timeout').value = settings.timeout;
-  document.getElementById('check-interval').value = settings.checkInterval;
   document.getElementById('dns-fqdn').value = settings.dnsFqdn;
 }
 
@@ -47,7 +45,6 @@ async function saveSettings(e) {
     ipv4Target: document.getElementById('ipv4-target').value.trim(),
     ipv6Target: document.getElementById('ipv6-target').value.trim(),
     timeout: parseInt(document.getElementById('timeout').value, 10),
-    checkInterval: parseInt(document.getElementById('check-interval').value, 10),
     dnsFqdn: document.getElementById('dns-fqdn').value.trim()
   };
   
@@ -78,7 +75,6 @@ async function resetDefaults() {
   document.getElementById('ipv4-target').value = DEFAULT_SETTINGS.ipv4Target;
   document.getElementById('ipv6-target').value = DEFAULT_SETTINGS.ipv6Target;
   document.getElementById('timeout').value = DEFAULT_SETTINGS.timeout;
-  document.getElementById('check-interval').value = DEFAULT_SETTINGS.checkInterval;
   document.getElementById('dns-fqdn').value = DEFAULT_SETTINGS.dnsFqdn;
   
   try {
